@@ -9,12 +9,67 @@ cp .env.example .env.local     # add ANTHROPIC_API_KEY
 npm run dev                    # http://localhost:3001
 ```
 
-Port 3001 for both `dev` and `start`. Note that localStorage is scoped per
-origin including the port — data saved under `:3000` is not visible under
-`:3001`. Moving ports starts from the seed collection again.
+`dev` binds to `0.0.0.0`, so a phone on the same Wi-Fi can reach it at
+`http://<your-mac-ip>:3001` — useful for testing on the real device. Note that
+iOS will not register a service worker over plain HTTP, so "Zum Home-Bildschirm"
+from a LAN address gives a standalone app without offline caching. The Pages
+deployment is HTTPS and does not have that limitation.
+
+Port 3001 for both `dev` and `start`. localStorage is scoped per origin
+*including the port*, so data saved under `:3000` is not visible under `:3001`,
+and neither is visible to the deployed site. Each is its own collection.
 
 The app runs without a key — everything except the two AI actions works, and
 those render the design's "nicht erreichbar" card.
+
+## Deployment — two build shapes
+
+The same codebase builds two ways, because GitHub Pages is a static file host
+and cannot run server code.
+
+| | `npm run build` | GitHub Actions → Pages |
+|---|---|---|
+| Runs on | Node (Vercel, a VPS, locally) | github.io, static files only |
+| API routes | live | **removed at build time** |
+| AI nutrition estimate | yes, server-side | **no** — computed from the library |
+| Base path | `/` | `/mise/` |
+
+**Live at https://alexkw94.github.io/mise/**, rebuilt by
+[`.github/workflows/deploy.yml`](.github/workflows/deploy.yml) on every push to
+`main`.
+
+### What the static build gives up, and why
+
+`output: export` refuses to build POST route handlers, so the workflow deletes
+`src/app/api` before building. The files stay in the repository — local
+development and any Node deployment still have them.
+
+The one user-visible consequence is "Nährwerte berechnen". On Pages it does
+**not** call Claude; it computes from the ingredient library and says so in the
+note when an ingredient has no values. Everything the library knows is exact,
+so the seed recipes and any ingredient you have already estimated once come out
+right. What is lost is estimating an unknown ingredient and reading a nutrition
+table off a screenshot.
+
+There is no way around this without a server. The API key must never reach the
+browser, so "just call Anthropic from the client" is not an option. To get the
+AI back, deploy the Node build somewhere (Vercel Hobby is free) — the code is
+already there and needs no changes.
+
+### Things that had to become base-path aware
+
+Next rewrites its own asset URLs, but not URLs the app builds itself. These are
+handled via `BASE_PATH` in [`src/lib/basePath.ts`](src/lib/basePath.ts):
+
+- the service worker registration, and the worker's own precache list (it
+  derives its base from `self.location`, so one file works at `/` and `/mise/`)
+- the icon and manifest links in `metadata`
+- **share links** — a link built on Pages has to point back into `/mise/`
+- the manifest's own `start_url`, `scope` and icon paths are relative, so they
+  resolve correctly at either location
+
+`out/.nojekyll` is created by the workflow; without it GitHub's Jekyll step
+drops every path beginning with an underscore, which is all of `/_next/`.
 
 ## What lives where
 
