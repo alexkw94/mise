@@ -132,6 +132,28 @@ handled via `BASE_PATH` in [`src/lib/basePath.ts`](src/lib/basePath.ts):
 `out/.nojekyll` is created by the workflow; without it GitHub's Jekyll step
 drops every path beginning with an underscore, which is all of `/_next/`.
 
+## Durability: keeping the collection
+
+Data lives in localStorage (JSON) and IndexedDB (images), which are per origin
+and per device. Two mechanisms guard it:
+
+**Persistent storage.** `StorageGuard` calls `navigator.storage.persist()` on
+load. Safari clears script-writable storage for sites the user has not
+interacted with for seven days; granted persistence takes the origin out of
+that sweep. Safari grants it to home-screen web apps, Chrome and Firefox decide
+by engagement. It is a request, not a guarantee — the backup sheet shows what
+was actually granted.
+
+**Backup file.** The download icon in the recipes header opens `BackupSheet`:
+one JSON file with recipes, hand-entered nutrition, the longlist, and every
+referenced image inline as a data URL. Reading a backup is **additive** — a
+recipe whose id already exists is left untouched, so an import can never
+destroy what is on the device, and the same file doubles as a way to move a
+collection to a second device.
+
+What this does **not** solve is two devices staying in step. That needs a
+server; see "Not done — deliberately".
+
 ## What lives where
 
 | Path | Role |
@@ -316,11 +338,20 @@ nutrition estimates from screenshots feel weak.
 
 ## Not done — deliberately
 
-- **Supabase.** Per your choice, persistence is local-first. `src/lib/store.ts`
-  and `src/lib/idb.ts` are the seams; the component tree never touches storage.
-  The brief's schema (`recipes`, `recipe_ingredients`, `ingredients`,
-  `longlist` + three Storage buckets + RLS on `user_id`) maps onto the types in
-  `src/lib/types.ts` without reshaping them.
+- **Supabase / sync between devices.** Persistence is local-first, so the
+  iPhone and the Mac hold separate collections and a cleared browser store is
+  gone. `src/lib/store.ts` and `src/lib/idb.ts` are the seams; the component
+  tree never touches storage, so a sync layer slots in behind them without
+  touching the UI. The brief's schema (`recipes`, `recipe_ingredients`,
+  `ingredients`, `longlist` + Storage buckets + RLS on `user_id`) maps onto the
+  types in `src/lib/types.ts` without reshaping them.
+
+  Worth recording: Supabase **would** work from the static GitHub Pages build.
+  Its anon key is public by design and Row Level Security does the protecting,
+  so no server of our own is required — unlike the Anthropic key, which must
+  never reach the browser. The blockers are an account, a magic-link login
+  screen, and closing public signups on the project so the quota is not open to
+  anyone who reads the (public) repo.
 - **Auth.** Single-user, no login. Arrives with Supabase.
 - **The AI routes have not been run against the live API** — no key was
   available in this environment. Request shape, schema, and error handling are

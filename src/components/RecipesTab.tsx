@@ -5,6 +5,7 @@ import { Screen, ScreenHeader, ScreenScroll, TABBAR } from "./Screen";
 import { StoredImage } from "./StoredImage";
 import { macroLine } from "@/lib/nutrition";
 import { shareRecipes } from "@/lib/share";
+import { BackupSheet } from "./BackupSheet";
 import { ALL_CATEGORIES, type Recipe } from "@/lib/types";
 
 function RecipeCard({
@@ -96,6 +97,7 @@ export function RecipesTab({
   onNew: () => void;
 }) {
   const [shareNote, setShareNote] = useState<string | null>(null);
+  const [backupOpen, setBackupOpen] = useState(false);
 
   const inCategory = useMemo(
     () =>
@@ -137,6 +139,23 @@ export function RecipesTab({
         kicker="Meine Sammlung"
         title="Rezepte"
         trailing={`${count} ${count === 1 ? "Karte" : "Karten"}`}
+        action={
+          <button
+            type="button"
+            onClick={() => setBackupOpen(true)}
+            className="mlk-icon-btn -mr-2"
+            aria-label="Sammlung sichern"
+            title="Sammlung sichern"
+          >
+            <svg width="19" height="19" viewBox="0 0 20 20" fill="none"
+                 stroke="currentColor" strokeWidth="1.6"
+                 strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M10 3v9" />
+              <path d="M6.5 8.5 10 12l3.5-3.5" />
+              <path d="M3.5 13.5v2a1.5 1.5 0 0 0 1.5 1.5h10a1.5 1.5 0 0 0 1.5-1.5v-2" />
+            </svg>
+          </button>
+        }
       >
         <input
           className="mlk-input mt-4"
@@ -227,6 +246,8 @@ export function RecipesTab({
           )}
         </div>
       </ScreenScroll>
+
+      {backupOpen && <BackupSheet onClose={() => setBackupOpen(false)} />}
 
       <button
         type="button"

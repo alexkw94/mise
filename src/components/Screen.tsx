@@ -14,6 +14,7 @@ export function ScreenHeader({
   kicker,
   title,
   trailing,
+  action,
   children,
 }: {
   /** Small uppercase line, right of the wordmark on the brand row. */
@@ -21,6 +22,8 @@ export function ScreenHeader({
   title: string;
   /** Right-aligned counter on the title baseline. */
   trailing?: string;
+  /** Optional control at the far right of the brand row. */
+  action?: ReactNode;
   /** Search field or similar, rendered below the title. */
   children?: ReactNode;
 }) {
@@ -30,7 +33,10 @@ export function ScreenHeader({
           with the screen's kicker so it costs no extra height. */}
       <div className="flex items-center justify-between gap-3">
         <Logo />
-        {kicker && <span className="mlk-kicker">{kicker}</span>}
+        <div className="flex items-center gap-2">
+          {kicker && <span className="mlk-kicker">{kicker}</span>}
+          {action}
+        </div>
       </div>
       <div className="mt-2 flex items-baseline justify-between gap-3">
         <h1 className="mlk-title">{title}</h1>

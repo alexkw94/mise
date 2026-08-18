@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { ServiceWorker } from "@/components/ServiceWorker";
+import { StorageGuard } from "@/components/StorageGuard";
 import { BASE_PATH } from "@/lib/basePath";
 
 export const metadata: Metadata = {
@@ -40,6 +41,7 @@ export default function RootLayout({
       <body>
         {children}
         <ServiceWorker />
+        <StorageGuard />
       </body>
     </html>
   );

@@ -238,6 +238,41 @@ export const actions = {
     set((s) => ({ ...s, recipes: s.recipes.filter((r) => r.id !== id) }));
   },
 
+  /**
+   * Merge a restored backup in. Additive by design — an import must never
+   * silently destroy what is already on the device, so anything with a
+   * matching id is left alone.
+   */
+  mergeState(incoming: AppState): { recipes: number; longlist: number } {
+    let recipes = 0;
+    let longlist = 0;
+    set((s) => {
+      const haveRecipe = new Set(s.recipes.map((r) => r.id));
+      const newRecipes = (incoming.recipes ?? [])
+        .filter((r) => !haveRecipe.has(r.id))
+        .map((r) => ({ ...r, categories: r.categories ?? [] }));
+      recipes = newRecipes.length;
+
+      const haveItem = new Set(s.longlist.map((l) => l.id));
+      const newItems = (incoming.longlist ?? []).filter(
+        (l) => !haveItem.has(l.id),
+      );
+      longlist = newItems.length;
+
+      return {
+        ...s,
+        recipes: [...newRecipes, ...s.recipes],
+        longlist: [...newItems, ...s.longlist],
+        // Hand-entered nutrition is worth keeping; local values win on clash.
+        library: { ...(incoming.library ?? {}), ...s.library },
+        removedLib: [
+          ...new Set([...(incoming.removedLib ?? []), ...s.removedLib]),
+        ],
+      };
+    });
+    return { recipes, longlist };
+  },
+
   /** Used by the share-link import. Always adds; never overwrites. */
   importRecipes(recipes: Recipe[]) {
     if (recipes.length === 0) return;
