@@ -5,6 +5,7 @@ import { StoredImage } from "./StoredImage";
 import { TABBAR } from "./Screen";
 import { IngredientPicker } from "./IngredientPicker";
 import { CategoryField } from "./CategoryField";
+import { NutritionSheet } from "./NutritionSheet";
 import {
   UNIT_HINT,
   computeNutrition,
@@ -59,6 +60,7 @@ export function RecipeEditor({
   );
   const [pickerOpen, setPickerOpen] = useState(false);
   const [missing, setMissing] = useState<string[]>([]);
+  const [editingNutri, setEditingNutri] = useState<string | null>(null);
   const [shareNote, setShareNote] = useState<string | null>(null);
   const cameraRef = useRef<HTMLInputElement>(null);
   const libraryRef = useRef<HTMLInputElement>(null);
@@ -447,19 +449,30 @@ export function RecipeEditor({
                     at all. Without it, a wrong name only shows up much later
                     as a mysterious 0. */}
                 <div className="mt-2 flex items-center justify-between gap-2">
-                  <span className="mlk-t-meta mlk-truncate">
-                    {!named
-                      ? "\u00A0"
-                      : found?.nutriPer100
+                  {!named ? (
+                    <span className="mlk-t-meta">&nbsp;</span>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setEditingNutri(row.name.trim())}
+                      className="mlk-t-meta mlk-truncate min-w-0 text-left"
+                      style={
+                        found?.nutriPer100
+                          ? undefined
+                          : { color: "var(--color-accent)" }
+                      }
+                    >
+                      {found?.nutriPer100
                         ? `Erkannt · ${found.nutriPer100.kcal} kcal / ${
                             found.basis === "stk" ? "Stück" : "100 g"
                           }${
                             found.gramsPerPiece
                               ? ` · 1 Stk ≈ ${found.gramsPerPiece} g`
                               : ""
-                          }`
-                        : "Nicht in der Nährwerttabelle"}
-                  </span>
+                          } · ändern`
+                        : "Keine Werte — eintragen →"}
+                    </button>
+                  )}
                   <button
                     type="button"
                     className="mlk-icon-btn -mr-2"
@@ -616,6 +629,14 @@ export function RecipeEditor({
           )}
         </div>
       </div>
+
+      {editingNutri && (
+        <NutritionSheet
+          name={editingNutri}
+          current={lookup(editingNutri)}
+          onClose={() => setEditingNutri(null)}
+        />
+      )}
 
       {pickerOpen && (
         <IngredientPicker

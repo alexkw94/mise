@@ -1,8 +1,9 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Screen, ScreenHeader, ScreenScroll } from "./Screen";
 import { StoredImage } from "./StoredImage";
+import { NutritionSheet } from "./NutritionSheet";
 import { nutriLine } from "@/lib/nutrition";
 import { actions } from "@/lib/store";
 import type { LibraryEntry } from "@/lib/types";
@@ -16,6 +17,8 @@ export function IngredientsTab({
   q: string;
   onQ: (v: string) => void;
 }) {
+  const [editing, setEditing] = useState<LibraryEntry | null>(null);
+
   const filtered = useMemo(() => {
     const term = q.trim().toLowerCase();
     if (!term) return library;
@@ -79,15 +82,26 @@ export function IngredientsTab({
                 >
                   {entry.name}
                 </div>
-                <div
-                  className="mt-1"
+
+                {/* The nutrition line is the edit affordance: tapping it opens
+                    the form, whether values exist yet or not. A plain button,
+                    so the link below stays valid markup. */}
+                <button
+                  type="button"
+                  onClick={() => setEditing(entry)}
+                  className="mlk-truncate mt-1 block max-w-full text-left"
                   style={{
                     font: "400 12px/1.4 var(--font-sans)",
-                    color: "var(--color-subtle)",
+                    color: entry.nutriPer100
+                      ? "var(--color-subtle)"
+                      : "var(--color-accent)",
                   }}
                 >
-                  {nutriLine(entry)}
-                </div>
+                  {entry.nutriPer100
+                    ? `${nutriLine(entry)} · ändern`
+                    : "Werte eintragen →"}
+                </button>
+
                 {entry.url ? (
                   <a
                     href={entry.url}
@@ -98,16 +112,15 @@ export function IngredientsTab({
                       font: "400 11.5px/1.4 var(--font-sans)",
                       color: "var(--color-accent)",
                     }}
-                    onClick={(e) => e.stopPropagation()}
                   >
                     {entry.url.replace(/^https?:\/\//, "")}
                   </a>
                 ) : (
                   <div
-                    className="mt-[3px]"
+                    className="mlk-truncate mt-[3px]"
                     style={{
                       font: "400 11.5px/1.4 var(--font-sans)",
-                      color: "var(--color-accent)",
+                      color: "var(--color-faint)",
                     }}
                   >
                     {entry.uses.length > 1
@@ -143,6 +156,18 @@ export function IngredientsTab({
           )}
         </div>
       </ScreenScroll>
+
+      {editing && (
+        <NutritionSheet
+          name={editing.name}
+          current={{
+            basis: editing.basis,
+            nutriPer100: editing.nutriPer100,
+            gramsPerPiece: editing.gramsPerPiece ?? null,
+          }}
+          onClose={() => setEditing(null)}
+        />
+      )}
     </Screen>
   );
 }

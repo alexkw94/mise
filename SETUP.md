@@ -88,6 +88,25 @@ When an amount cannot be read, or a name is unknown, the row says which of the
 two it is rather than quietly contributing zero — that ambiguity was the
 original complaint.
 
+### Entering nutrition by hand
+
+Any ingredient's values can be typed in and are then stored in the user's own
+library, where they beat the built-in table for that name from then on — in
+every recipe that uses it. `NutritionSheet` is reachable from two places:
+
+- **Zutaten tab** — the nutrition line under each name is the affordance
+  ("Werte eintragen →" when empty, "… · ändern" when set).
+- **Recipe editor** — the same line under an ingredient row, so a name the
+  table does not know can be fixed at the moment it comes up.
+
+The form takes kcal / protein / fat / carbohydrate, a basis toggle (per 100 g
+or per piece), and an optional piece weight so counted amounts ("2 Stk") work.
+"Auf Tabellenwert zurücksetzen" drops the override again.
+
+Saving recomputes every recipe containing that ingredient (`recomputeUsing` in
+`store.ts`), so a correction shows on the cards immediately rather than at the
+next time someone opens the recipe.
+
 ### What the static build gives up
 
 `output: export` refuses to build POST route handlers, so the workflow deletes

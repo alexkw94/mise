@@ -19,6 +19,8 @@ const UNIT_G: Record<string, number> = {
 /** Units the amount field understands, shown to the user as a hint. */
 export const UNIT_HINT = "g · kg · ml · dl · Stk · EL · TL · Bund · Prise";
 
+export type { Basis };
+
 /** Where an ingredient's numbers come from, once resolved. */
 export interface NutriSource {
   basis: Basis;

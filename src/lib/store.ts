@@ -175,6 +175,20 @@ function resolve(s: AppState, name: string): NutriSource | null {
   return null;
 }
 
+/** Recompute the stored totals of every recipe containing `name`. */
+function recomputeUsing(s: AppState, name: string): AppState {
+  const lookup = (n: string) => resolve(s, n);
+  const target = name.trim().toLowerCase();
+  return {
+    ...s,
+    recipes: s.recipes.map((r) =>
+      r.ings.some((i) => i.name.trim().toLowerCase() === target)
+        ? { ...r, nutri: computeNutrition(r.ings, lookup) }
+        : r,
+    ),
+  };
+}
+
 /** Lookup used by the nutrition computation. */
 export function makeLookup(s: AppState) {
   return (name: string): NutriSource | null => resolve(s, name);
@@ -254,11 +268,25 @@ export const actions = {
     nutriPer100: NutriPer | null,
     gramsPerPiece: number | null = null,
   ) {
-    set((s) => ({
-      ...s,
-      library: { ...s.library, [name]: { basis, nutriPer100, gramsPerPiece } },
-      removedLib: s.removedLib.filter((n) => n !== name),
-    }));
+    set((s) => {
+      const next: AppState = {
+        ...s,
+        library: { ...s.library, [name]: { basis, nutriPer100, gramsPerPiece } },
+        removedLib: s.removedLib.filter((n) => n !== name),
+      };
+      // A corrected value has to show up on the cards straight away, so
+      // recompute every recipe that uses this ingredient.
+      return recomputeUsing(next, name);
+    });
+  },
+
+  /** Drop a manual value and fall back to the built-in table again. */
+  clearLibraryNutrition(name: string) {
+    set((s) => {
+      const library = { ...s.library };
+      delete library[name];
+      return recomputeUsing({ ...s, library }, name);
+    });
   },
 
   removeFromLibrary(name: string) {
