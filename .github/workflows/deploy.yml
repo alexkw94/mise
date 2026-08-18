@@ -1,0 +1,69 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  # Lets you re-deploy from the Actions tab without pushing a commit.
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Never let two deployments race; finish the running one, then take the newest.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Configure Pages
+        id: pages
+        uses: actions/configure-pages@v5
+
+      - name: Drop server routes
+        # GitHub Pages serves static files only, and `output: export` refuses
+        # to build POST route handlers. They stay in the repository for local
+        # development and for any Node deployment; they just cannot ship here.
+        run: rm -rf src/app/api
+
+      - name: Build static site
+        env:
+          STATIC_EXPORT: "1"
+          # The site lives at https://<user>.github.io/<repo>/ — every
+          # self-built URL needs that prefix.
+          NEXT_PUBLIC_BASE_PATH: ${{ steps.pages.outputs.base_path }}
+          # Tells the app there is no /api to call.
+          NEXT_PUBLIC_STATIC: "1"
+        run: npm run build
+
+      - name: Add .nojekyll
+        # Without this, GitHub's Jekyll step silently drops every path starting
+        # with an underscore — which is all of Next's /_next/ assets.
+        run: touch out/.nojekyll
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: out
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

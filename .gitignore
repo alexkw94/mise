@@ -1,0 +1,18 @@
+node_modules/
+.next/
+out/
+build/
+.DS_Store
+# AppleDouble sidecar files, created because this lives on a non-HFS volume
+._*
+*.pem
+
+.env
+.env.local
+.env*.local
+
+next-env.d.ts
+*.tsbuildinfo
+
+# Static export output
+out/

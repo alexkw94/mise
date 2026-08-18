@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:linear-gradient(160deg,#EFF0F2 0%,#E3E5E8 45%,#D9DBDF 100%);font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text',Archivo,system-ui,sans-serif;color:#1D1D1F}
+a{color:#1D1D1F}a:hover{color:#0071E3}
+input,textarea,button{font-family:inherit;color:inherit}
+input::placeholder,textarea::placeholder{color:#A1A1A6}
+input:focus-visible,textarea:focus-visible,button:focus-visible{outline:2px solid #0071E3;outline-offset:2px}
+::selection{background:rgba(0,113,227,.16)}
+.mlk-scroll::-webkit-scrollbar{width:0}
+</style>
+</helmet>
+
+<div style="min-height:100vh;padding:44px 52px 72px;box-sizing:border-box;display:flex;flex-direction:column;gap:34px">
+
+  <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:24px;padding-bottom:18px;border-bottom:1px solid rgba(0,0,0,.09)">
+    <div>
+      <div style="font:500 11px/1 -apple-system,system-ui;letter-spacing:.22em;text-transform:uppercase;color:#86868B">My Little Kitchen · Version 2</div>
+      <div style="font:600 42px/1.04 -apple-system,system-ui;letter-spacing:-.028em;margin-top:10px">Silber, Glas, Licht.</div>
+    </div>
+    <div style="font:400 13.5px/1.55 -apple-system,system-ui;color:#6E6E73;max-width:360px">Dieselbe App, neue Haut: Milchglas-Flächen über hellem Silber, Haarlinien statt Rahmen, ein einziger Akzent. Alles bleibt klickbar.</div>
+  </div>
+
+  <div style="display:flex;gap:52px;align-items:flex-start;flex-wrap:wrap">
+
+    <x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" hint-size="402px,874px">
+      <div style="height:100%;display:flex;flex-direction:column;background:linear-gradient(180deg,#FBFBFD 0%,#F2F3F5 40%,#E8EAEE 100%);color:#1D1D1F;position:relative">
+
+        <sc-if value="{{ isList }}" hint-placeholder-val="{{ true }}">
+          <div style="flex:1;display:flex;flex-direction:column;min-height:0">
+
+            <sc-if value="{{ onRecipes }}" hint-placeholder-val="{{ true }}">
+              <div style="padding:58px 22px 16px;background:rgba(255,255,255,.62);backdrop-filter:blur(24px) saturate(180%);-webkit-backdrop-filter:blur(24px) saturate(180%);border-bottom:.5px solid rgba(0,0,0,.1)">
+                <div style="font:500 10px/1 -apple-system,system-ui;letter-spacing:.2em;text-transform:uppercase;color:#86868B">Meine Sammlung</div>
+                <div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-top:8px">
+                  <div style="font:600 34px/1 -apple-system,system-ui;letter-spacing:-.028em">Rezepte</div>
+                  <div style="font:400 12.5px/1 -apple-system,system-ui;color:#86868B">{{ recipeCount }}</div>
+                </div>
+                <sc-if value="{{ withSearch }}" hint-placeholder-val="{{ true }}">
+                  <input placeholder="Rezept oder Zutat suchen" value="{{ q }}" onChange="{{ onQ }}" style="margin-top:16px;width:100%;box-sizing:border-box;height:46px;padding:0 16px;border-radius:14px;background:rgba(255,255,255,.75);border:.5px solid rgba(0,0,0,.1);box-shadow:inset 0 1px 0 rgba(255,255,255,.9),0 1px 2px rgba(0,0,0,.03);font-size:15.5px;letter-spacing:-.01em" />
+                </sc-if>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ onIngredients }}" hint-placeholder-val="{{ false }}">
+              <div style="padding:58px 22px 16px;background:rgba(255,255,255,.62);backdrop-filter:blur(24px) saturate(180%);-webkit-backdrop-filter:blur(24px) saturate(180%);border-bottom:.5px solid rgba(0,0,0,.1)">
+                <div style="font:500 10px/1 -apple-system,system-ui;letter-spacing:.2em;text-transform:uppercase;color:#86868B">Baut sich selbst auf</div>
+                <div style="font:600 34px/1 -apple-system,system-ui;letter-spacing:-.028em;margin-top:8px">Zutaten</div>
+                <input placeholder="Zutat suchen" value="{{ libQ }}" onChange="{{ onLibQ }}" style="margin-top:16px;width:100%;box-sizing:border-box;height:46px;padding:0 16px;border-radius:14px;background:rgba(255,255,255,.75);border:.5px solid rgba(0,0,0,.1);box-shadow:inset 0 1px 0 rgba(255,255,255,.9),0 1px 2px rgba(0,0,0,.03);font-size:15.5px;letter-spacing:-.01em" />
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ onCook }}" hint-placeholder-val="{{ false }}">
+              <div style="padding:58px 22px 16px;background:rgba(255,255,255,.62);backdrop-filter:blur(24px) saturate(180%);-webkit-backdrop-filter:blur(24px) saturate(180%);border-bottom:.5px solid rgba(0,0,0,.1)">
+                <div style="font:500 10px/1 -apple-system,system-ui;letter-spacing:.2em;text-transform:uppercase;color:#86868B">Aus dem Kühlschrank</div>
+                <div style="font:600 34px/1 -apple-system,system-ui;letter-spacing:-.028em;margin-top:8px">Was koch ich?</div>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ onList4 }}" hint-placeholder-val="{{ false }}">
+              <div style="padding:58px 22px 16px;background:rgba(255,255,255,.62);backdrop-filter:blur(24px) saturate(180%);-webkit-backdrop-filter:blur(24px) saturate(180%);border-bottom:.5px solid rgba(0,0,0,.1)">
+                <div style="font:500 10px/1 -apple-system,system-ui;letter-spacing:.2em;text-transform:uppercase;color:#86868B">Noch auszuprobieren</div>
+                <div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-top:8px">
+                  <div style="font:600 34px/1 -apple-system,system-ui;letter-spacing:-.028em">Merkliste</div>
+                  <div style="font:400 12.5px/1 -apple-system,system-ui;color:#86868B">{{ openCount }}</div>
+                </div>
+              </div>
+            </sc-if>
+
+            <div class="mlk-scroll" style="flex:1;overflow:auto;padding:18px 22px 136px">
+
+              <sc-if value="{{ onRecipes }}" hint-placeholder-val="{{ true }}">
+                <div style="display:flex;flex-direction:column;gap:18px">
+                  <sc-for list="{{ cards }}" as="r" hint-placeholder-count="2">
+                    <div onClick="{{ r.open }}" style="border-radius:22px;overflow:hidden;background:rgba(255,255,255,.72);backdrop-filter:blur(18px) saturate(180%);-webkit-backdrop-filter:blur(18px) saturate(180%);border:.5px solid rgba(255,255,255,.85);box-shadow:0 1px 1px rgba(0,0,0,.04),0 12px 32px -12px rgba(20,22,28,.28);cursor:pointer;transition:transform .25s cubic-bezier(.22,.61,.36,1),box-shadow .25s" style-hover="transform:translateY(-2px);box-shadow:0 2px 2px rgba(0,0,0,.04),0 22px 44px -16px rgba(20,22,28,.34)">
+                      <div style="height:158px;background:linear-gradient(145deg,#F7F8FA 0%,#E6E8EC 48%,#D6D9DE 100%);position:relative;display:flex;align-items:flex-end;justify-content:space-between;padding:14px">
+                        <div style="position:absolute;inset:0;background:linear-gradient(115deg,rgba(255,255,255,.85) 0%,rgba(255,255,255,0) 38%,rgba(255,255,255,.5) 62%,rgba(255,255,255,0) 100%)"></div>
+                        <div style="position:relative;font:500 10.5px/1 -apple-system,system-ui;letter-spacing:.14em;text-transform:uppercase;color:#6E6E73;background:rgba(255,255,255,.7);backdrop-filter:blur(8px);padding:7px 11px;border-radius:100px;border:.5px solid rgba(255,255,255,.9)">{{ r.photoLabel }}</div>
+                        <div style="position:relative;font:400 11.5px/1 -apple-system,system-ui;color:#6E6E73;background:rgba(255,255,255,.7);backdrop-filter:blur(8px);padding:7px 11px;border-radius:100px;border:.5px solid rgba(255,255,255,.9)">{{ r.servingsLabel }}</div>
+                      </div>
+                      <div style="padding:16px 18px 18px">
+                        <div style="font:600 22px/1.15 -apple-system,system-ui;letter-spacing:-.024em">{{ r.title }}</div>
+                        <div style="font:400 13px/1.45 -apple-system,system-ui;color:#86868B;margin-top:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ r.ingLine }}</div>
+                        <sc-if value="{{ withNutri }}" hint-placeholder-val="{{ true }}">
+                          <div style="margin-top:14px;padding-top:13px;border-top:.5px solid rgba(0,0,0,.09);display:flex;gap:10px;align-items:baseline;flex-wrap:wrap">
+                            <span style="font:600 13.5px/1 -apple-system,system-ui;letter-spacing:-.01em">{{ r.kcal }}</span>
+                            <span style="font:400 12.5px/1 -apple-system,system-ui;color:#86868B">{{ r.macros }}</span>
+                          </div>
+                        </sc-if>
+                      </div>
+                    </div>
+                  </sc-for>
+                  <sc-if value="{{ noCards }}" hint-placeholder-val="{{ false }}">
+                    <div style="border-radius:22px;background:rgba(255,255,255,.6);border:.5px solid rgba(255,255,255,.85);box-shadow:0 12px 32px -14px rgba(20,22,28,.3);padding:28px 22px">
+                      <div style="font:600 24px/1.15 -apple-system,system-ui;letter-spacing:-.026em">Noch keine Karte.</div>
+                      <div style="font:400 14.5px/1.5 -apple-system,system-ui;color:#6E6E73;margin-top:10px">Koch etwas Gutes und halt es fest — Foto, Zutaten, fertig. Dauert unter einer Minute.</div>
+                      <div onClick="{{ newRecipe }}" style="margin-top:20px;display:inline-flex;align-items:center;height:46px;padding:0 22px;border-radius:100px;background:linear-gradient(180deg,#3A3A3C,#1D1D1F);color:#fff;font:500 14.5px/1 -apple-system,system-ui;letter-spacing:-.01em;box-shadow:0 8px 20px -8px rgba(0,0,0,.55);cursor:pointer">Erstes Rezept anlegen</div>
+                    </div>
+                  </sc-if>
+                </div>
+              </sc-if>
+
+              <sc-if value="{{ onIngredients }}" hint-placeholder-val="{{ false }}">
+                <div style="border-radius:22px;overflow:hidden;background:rgba(255,255,255,.72);backdrop-filter:blur(18px) saturate(180%);-webkit-backdrop-filter:blur(18px) saturate(180%);border:.5px solid rgba(255,255,255,.85);box-shadow:0 1px 1px rgba(0,0,0,.04),0 12px 32px -14px rgba(20,22,28,.28)">
+                  <sc-for list="{{ lib }}" as="it" hint-placeholder-count="4">
+                    <div style="display:flex;gap:14px;align-items:center;padding:14px 16px;border-bottom:.5px solid rgba(0,0,0,.07)">
+                      <div style="width:52px;height:52px;flex:none;border-radius:14px;background:linear-gradient(145deg,#F7F8FA,#DEE1E6);border:.5px solid rgba(255,255,255,.9);box-shadow:inset 0 1px 0 rgba(255,255,255,.9);display:flex;align-items:center;justify-content:center;font:500 9px/1 -apple-system,system-ui;letter-spacing:.1em;color:#86868B">{{ it.shotLabel }}</div>
+                      <div style="flex:1;min-width:0">
+                        <div style="font:500 16.5px/1.2 -apple-system,system-ui;letter-spacing:-.018em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ it.name }}</div>
+                        <div style="font:400 12px/1.4 -apple-system,system-ui;color:#86868B;margin-top:4px">{{ it.nutriLine }}</div>
+                        <div style="font:400 11.5px/1.4 -apple-system,system-ui;color:#0071E3;margin-top:3px">{{ it.source }}</div>
+                      </div>
+                      <div onClick="{{ it.remove }}" style="width:44px;height:44px;flex:none;display:flex;align-items:center;justify-content:center;border-radius:100px;color:#A1A1A6;font-size:16px;cursor:pointer" style-hover="background:rgba(0,0,0,.05);color:#1D1D1F">✕</div>
+                    </div>
+                  </sc-for>
+                  <sc-if value="{{ noLib }}" hint-placeholder-val="{{ false }}">
+                    <div style="padding:26px 18px;font:400 14px/1.5 -apple-system,system-ui;color:#86868B">Die Bibliothek füllt sich von selbst, sobald du Zutaten in Rezepten erfasst.</div>
+                  </sc-if>
+                </div>
+              </sc-if>
+
+              <sc-if value="{{ onCook }}" hint-placeholder-val="{{ false }}">
+                <div style="display:flex;flex-direction:column;gap:16px">
+                  <div style="font:400 15px/1.5 -apple-system,system-ui;color:#6E6E73">Was liegt herum? Tipp es ein — du bekommst ein konkretes Gericht plus die zwei, drei Dinge, die noch fehlen.</div>
+                  <textarea value="{{ cookInput }}" onChange="{{ onCookInput }}" placeholder="z.B. Poulet, Zucchini, Reis, Zitrone, Joghurt" style="width:100%;box-sizing:border-box;min-height:116px;padding:14px 16px;border-radius:18px;background:rgba(255,255,255,.75);border:.5px solid rgba(0,0,0,.1);box-shadow:inset 0 1px 0 rgba(255,255,255,.9);font-size:15.5px;line-height:1.5;letter-spacing:-.01em;resize:none"></textarea>
+                  <div style="display:flex;gap:8px;flex-wrap:wrap">
+                    <sc-for list="{{ pantryChips }}" as="c" hint-placeholder-count="4">
+                      <div onClick="{{ c.add }}" style="height:38px;display:flex;align-items:center;padding:0 15px;border-radius:100px;background:linear-gradient(180deg,rgba(255,255,255,.9),rgba(255,255,255,.65));border:.5px solid rgba(0,0,0,.09);box-shadow:0 1px 2px rgba(0,0,0,.04);font:400 13.5px/1 -apple-system,system-ui;color:#1D1D1F;cursor:pointer" style-hover="border-color:#0071E3;color:#0071E3">{{ c.label }}</div>
+                    </sc-for>
+                  </div>
+                  <div onClick="{{ cookSuggest }}" style="height:54px;display:flex;align-items:center;padding:0 22px;border-radius:100px;background:linear-gradient(180deg,#3A3A3C,#1D1D1F);color:#fff;font:500 15.5px/1 -apple-system,system-ui;letter-spacing:-.01em;box-shadow:0 10px 24px -10px rgba(0,0,0,.6);cursor:pointer" style-hover="background:linear-gradient(180deg,#4A4A4D,#2A2A2C)">{{ cookBtnLabel }}</div>
+
+                  <sc-if value="{{ cookLoading }}" hint-placeholder-val="{{ false }}">
+                    <div style="border-radius:22px;background:rgba(255,255,255,.7);border:.5px solid rgba(255,255,255,.85);box-shadow:0 12px 32px -16px rgba(20,22,28,.3);padding:20px">
+                      <div style="font:500 10px/1 -apple-system,system-ui;letter-spacing:.2em;text-transform:uppercase;color:#86868B">Denkt nach</div>
+                      <div style="height:12px;border-radius:100px;background:linear-gradient(90deg,#EDEEF1,#E2E4E9,#EDEEF1);margin-top:16px;width:82%"></div>
+                      <div style="height:12px;border-radius:100px;background:linear-gradient(90deg,#EDEEF1,#E2E4E9,#EDEEF1);margin-top:9px;width:62%"></div>
+                      <div style="height:12px;border-radius:100px;background:linear-gradient(90deg,#EDEEF1,#E2E4E9,#EDEEF1);margin-top:9px;width:72%"></div>
+                    </div>
+                  </sc-if>
+
+                  <sc-if value="{{ cookResult }}" hint-placeholder-val="{{ false }}">
+                    <div style="border-radius:22px;background:rgba(255,255,255,.74);backdrop-filter:blur(18px) saturate(180%);-webkit-backdrop-filter:blur(18px) saturate(180%);border:.5px solid rgba(255,255,255,.85);box-shadow:0 1px 1px rgba(0,0,0,.04),0 16px 40px -18px rgba(20,22,28,.35);padding:20px">
+                      <div style="font:500 10px/1 -apple-system,system-ui;letter-spacing:.2em;text-transform:uppercase;color:#0071E3">Vorschlag</div>
+                      <div style="font:600 25px/1.12 -apple-system,system-ui;letter-spacing:-.026em;margin-top:10px">{{ cookTitle }}</div>
+                      <div style="font:400 14.5px/1.55 -apple-system,system-ui;color:#1D1D1F;margin-top:12px">{{ cookBody }}</div>
+                      <div style="margin-top:16px;padding-top:14px;border-top:.5px solid rgba(0,0,0,.09);font:400 12.5px/1.5 -apple-system,system-ui;color:#86868B">{{ cookMissing }}</div>
+                      <div onClick="{{ adoptCook }}" style="margin-top:18px;height:48px;display:flex;align-items:center;padding:0 20px;border-radius:100px;background:rgba(255,255,255,.85);border:.5px solid rgba(0,0,0,.12);box-shadow:0 1px 2px rgba(0,0,0,.05);font:500 14.5px/1 -apple-system,system-ui;cursor:pointer" style-hover="border-color:#0071E3;color:#0071E3">In meine Rezepte übernehmen</div>
+                    </div>
+                  </sc-if>
+                </div>
+              </sc-if>
+
+              <sc-if value="{{ onList4 }}" hint-placeholder-val="{{ false }}">
+                <div style="display:flex;flex-direction:column;gap:14px">
+                  <div style="display:flex;gap:9px">
+                    <input value="{{ lonInput }}" onChange="{{ onLonInput }}" placeholder="Notiz oder Link einfügen" style="flex:1;min-width:0;height:50px;padding:0 16px;border-radius:100px;background:rgba(255,255,255,.78);border:.5px solid rgba(0,0,0,.1);box-shadow:inset 0 1px 0 rgba(255,255,255,.9);font-size:15.5px;letter-spacing:-.01em" />
+                    <div onClick="{{ addLong }}" style="width:50px;height:50px;flex:none;display:flex;align-items:center;justify-content:center;border-radius:100px;background:linear-gradient(180deg,#3A3A3C,#1D1D1F);color:#fff;font:300 26px/1 -apple-system,system-ui;box-shadow:0 8px 20px -10px rgba(0,0,0,.6);cursor:pointer">+</div>
+                  </div>
+                  <div onClick="{{ addLongImage }}" style="height:46px;display:flex;align-items:center;padding:0 18px;border-radius:100px;border:1px dashed rgba(0,0,0,.16);font:400 13.5px/1 -apple-system,system-ui;color:#86868B;cursor:pointer" style-hover="border-color:#0071E3;color:#0071E3">Bild hochladen</div>
+                  <div style="border-radius:22px;overflow:hidden;background:rgba(255,255,255,.72);backdrop-filter:blur(18px) saturate(180%);-webkit-backdrop-filter:blur(18px) saturate(180%);border:.5px solid rgba(255,255,255,.85);box-shadow:0 1px 1px rgba(0,0,0,.04),0 12px 32px -14px rgba(20,22,28,.28)">
+                    <sc-for list="{{ longlist }}" as="l" hint-placeholder-count="3">
+                      <div style="display:flex;gap:13px;align-items:flex-start;padding:15px 16px;border-bottom:.5px solid rgba(0,0,0,.07)">
+                        <div onClick="{{ l.toggle }}" style="width:26px;height:26px;flex:none;margin-top:3px;border-radius:100px;border:1px solid {{ l.checkBorder }};background:{{ l.checkBg }};display:flex;align-items:center;justify-content:center;font:500 13px/1 -apple-system,system-ui;color:#fff;cursor:pointer">{{ l.mark }}</div>
+                        <div style="flex:1;min-width:0">
+                          <div style="font:500 9.5px/1 -apple-system,system-ui;letter-spacing:.18em;text-transform:uppercase;color:#A1A1A6">{{ l.kind }}</div>
+                          <div style="font:400 16px/1.35 -apple-system,system-ui;letter-spacing:-.016em;margin-top:6px;color:{{ l.color }};text-decoration:{{ l.deco }}">{{ l.note }}</div>
+                          <sc-if value="{{ l.hasUrl }}" hint-placeholder-val="{{ false }}">
+                            <div style="font:400 12px/1.4 -apple-system,system-ui;color:#0071E3;margin-top:5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ l.url }}</div>
+                          </sc-if>
+                        </div>
+                        <div onClick="{{ l.remove }}" style="width:44px;height:44px;flex:none;display:flex;align-items:center;justify-content:center;border-radius:100px;color:#A1A1A6;font-size:16px;cursor:pointer" style-hover="background:rgba(0,0,0,.05);color:#1D1D1F">✕</div>
+                      </div>
+                    </sc-for>
+                    <sc-if value="{{ noLong }}" hint-placeholder-val="{{ false }}">
+                      <div style="padding:26px 18px;font:400 14px/1.5 -apple-system,system-ui;color:#86868B">Nichts vorgemerkt. Wirf Videolinks, Screenshots und Ideen hier rein.</div>
+                    </sc-if>
+                  </div>
+                </div>
+              </sc-if>
+
+            </div>
+
+            <sc-if value="{{ onRecipes }}" hint-placeholder-val="{{ true }}">
+              <div onClick="{{ newRecipe }}" style="position:absolute;right:20px;bottom:118px;z-index:20;height:58px;display:flex;align-items:center;gap:9px;padding:0 24px;border-radius:100px;background:linear-gradient(180deg,#3A3A3C,#1D1D1F);color:#fff;font:500 15.5px/1 -apple-system,system-ui;letter-spacing:-.01em;box-shadow:0 14px 34px -12px rgba(0,0,0,.65),inset 0 .5px 0 rgba(255,255,255,.25);cursor:pointer" style-hover="background:linear-gradient(180deg,#4A4A4D,#2A2A2C)"><span style="font-size:22px;font-weight:300;line-height:1">+</span>Neues Rezept</div>
+            </sc-if>
+
+            <div style="flex:none;display:grid;grid-template-columns:repeat(4,1fr);background:rgba(255,255,255,.72);backdrop-filter:blur(28px) saturate(190%);-webkit-backdrop-filter:blur(28px) saturate(190%);border-top:.5px solid rgba(0,0,0,.1);padding-bottom:26px">
+              <sc-for list="{{ tabs }}" as="t" hint-placeholder-count="4">
+                <div onClick="{{ t.go }}" style="height:64px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;cursor:pointer">
+                  <div style="width:22px;height:22px;border-radius:7px;border:1.5px solid {{ t.color }};background:{{ t.fill }};box-shadow:{{ t.glow }}"></div>
+                  <div style="font:500 10.5px/1 -apple-system,system-ui;letter-spacing:-.005em;color:{{ t.color }}">{{ t.label }}</div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ isEdit }}" hint-placeholder-val="{{ false }}">
+          <div style="flex:1;display:flex;flex-direction:column;min-height:0">
+            <div style="padding:56px 16px 14px;background:rgba(255,255,255,.7);backdrop-filter:blur(28px) saturate(190%);-webkit-backdrop-filter:blur(28px) saturate(190%);border-bottom:.5px solid rgba(0,0,0,.1);display:flex;align-items:center;justify-content:space-between;gap:8px">
+              <div onClick="{{ cancel }}" style="height:44px;display:flex;align-items:center;padding:0 10px;font:400 15px/1 -apple-system,system-ui;color:#0071E3;cursor:pointer" style-hover="opacity:.6">Abbrechen</div>
+              <div style="font:500 10px/1 -apple-system,system-ui;letter-spacing:.18em;text-transform:uppercase;color:#86868B">{{ editKicker }}</div>
+              <div onClick="{{ save }}" style="height:42px;display:flex;align-items:center;padding:0 20px;border-radius:100px;background:linear-gradient(180deg,#3A3A3C,#1D1D1F);color:#fff;font:500 14.5px/1 -apple-system,system-ui;box-shadow:0 8px 18px -10px rgba(0,0,0,.6);cursor:pointer">Speichern</div>
+            </div>
+
+            <div class="mlk-scroll" style="flex:1;overflow:auto;padding:22px 22px 48px">
+              <input value="{{ dTitle }}" onChange="{{ onTitle }}" placeholder="Titel des Gerichts" style="width:100%;box-sizing:border-box;background:transparent;border:none;border-bottom:.5px solid rgba(0,0,0,.12);padding:0 0 12px;font:600 30px/1.1 -apple-system,system-ui;letter-spacing:-.03em" />
+
+              <div onClick="{{ shootPhoto }}" style="margin-top:22px;height:190px;border-radius:22px;background:linear-gradient(145deg,#F7F8FA 0%,#E6E8EC 48%,#D6D9DE 100%);border:.5px solid rgba(255,255,255,.9);box-shadow:inset 0 1px 0 rgba(255,255,255,.9),0 10px 28px -16px rgba(20,22,28,.35);position:relative;overflow:hidden;display:flex;flex-direction:column;align-items:flex-start;justify-content:flex-end;padding:16px;gap:10px;cursor:pointer">
+                <div style="position:absolute;inset:0;background:linear-gradient(115deg,rgba(255,255,255,.85) 0%,rgba(255,255,255,0) 38%,rgba(255,255,255,.5) 62%,rgba(255,255,255,0) 100%)"></div>
+                <div style="position:relative;font:500 10.5px/1 -apple-system,system-ui;letter-spacing:.14em;text-transform:uppercase;color:#6E6E73;background:rgba(255,255,255,.72);backdrop-filter:blur(8px);padding:8px 12px;border-radius:100px;border:.5px solid rgba(255,255,255,.9)">{{ photoState }}</div>
+                <div style="position:relative;font:500 13.5px/1 -apple-system,system-ui;color:#fff;background:linear-gradient(180deg,#3A3A3C,#1D1D1F);padding:13px 18px;border-radius:100px;box-shadow:0 8px 18px -10px rgba(0,0,0,.6)">{{ photoAction }}</div>
+              </div>
+
+              <div style="margin-top:28px;display:flex;align-items:baseline;justify-content:space-between">
+                <div style="font:500 10px/1 -apple-system,system-ui;letter-spacing:.2em;text-transform:uppercase;color:#86868B">Zutaten</div>
+                <div style="font:400 12.5px/1 -apple-system,system-ui;color:#A1A1A6">{{ ingCount }}</div>
+              </div>
+
+              <div style="margin-top:14px;display:flex;flex-direction:column;gap:12px">
+                <sc-for list="{{ rows }}" as="row" hint-placeholder-count="2">
+                  <div style="border-radius:20px;background:rgba(255,255,255,.72);backdrop-filter:blur(16px) saturate(180%);-webkit-backdrop-filter:blur(16px) saturate(180%);border:.5px solid rgba(255,255,255,.85);box-shadow:0 1px 1px rgba(0,0,0,.04),0 10px 26px -16px rgba(20,22,28,.3);padding:14px">
+                    <div style="display:flex;gap:9px">
+                      <input value="{{ row.name }}" onChange="{{ row.onName }}" onFocus="{{ row.onFocus }}" placeholder="Bezeichnung" style="flex:1;min-width:0;height:46px;padding:0 14px;border-radius:14px;background:rgba(255,255,255,.8);border:.5px solid rgba(0,0,0,.1);font-size:15.5px;letter-spacing:-.01em" />
+                      <input value="{{ row.amount }}" onChange="{{ row.onAmount }}" placeholder="Menge" style="width:98px;flex:none;height:46px;padding:0 14px;border-radius:14px;background:rgba(255,255,255,.8);border:.5px solid rgba(0,0,0,.1);font-size:15.5px;letter-spacing:-.01em" />
+                    </div>
+                    <sc-if value="{{ row.showSug }}" hint-placeholder-val="{{ false }}">
+                      <div style="margin-top:10px;border-radius:16px;overflow:hidden;background:rgba(255,255,255,.92);border:.5px solid rgba(0,0,0,.1);box-shadow:0 16px 34px -18px rgba(20,22,28,.45)">
+                        <sc-for list="{{ row.sug }}" as="s" hint-placeholder-count="2">
+                          <div onClick="{{ s.pick }}" style="padding:12px 14px;border-bottom:.5px solid rgba(0,0,0,.07);cursor:pointer" style-hover="background:rgba(0,113,227,.07)">
+                            <div style="font:500 15px/1.2 -apple-system,system-ui;letter-spacing:-.016em">{{ s.name }}</div>
+                            <div style="font:400 11.5px/1.35 -apple-system,system-ui;color:#86868B;margin-top:4px">{{ s.nutriLine }}</div>
+                          </div>
+                        </sc-for>
+                      </div>
+                    </sc-if>
+                    <input value="{{ row.url }}" onChange="{{ row.onUrl }}" placeholder="Produktlink Coop / Migros" style="margin-top:9px;width:100%;box-sizing:border-box;height:42px;padding:0 14px;border-radius:14px;background:rgba(255,255,255,.8);border:.5px solid rgba(0,0,0,.1);font-size:13px;letter-spacing:-.005em" />
+                    <div style="display:flex;gap:9px;margin-top:9px;align-items:center">
+                      <div onClick="{{ row.shoot }}" style="flex:1;height:42px;display:flex;align-items:center;padding:0 14px;border-radius:14px;border:1px dashed rgba(0,0,0,.16);font:400 12.5px/1 -apple-system,system-ui;color:{{ row.shotColor }};cursor:pointer" style-hover="border-color:#0071E3">{{ row.shotLabel }}</div>
+                      <div onClick="{{ row.remove }}" style="width:44px;height:44px;flex:none;display:flex;align-items:center;justify-content:center;border-radius:100px;color:#A1A1A6;font-size:16px;cursor:pointer" style-hover="background:rgba(0,0,0,.05);color:#1D1D1F">✕</div>
+                    </div>
+                  </div>
+                </sc-for>
+              </div>
+
+              <div onClick="{{ addIng }}" style="margin-top:14px;height:48px;display:flex;align-items:center;padding:0 18px;border-radius:100px;background:rgba(255,255,255,.85);border:.5px solid rgba(0,0,0,.11);box-shadow:0 1px 2px rgba(0,0,0,.05);font:500 14.5px/1 -apple-system,system-ui;cursor:pointer" style-hover="border-color:#0071E3;color:#0071E3">+ Zutat</div>
+
+              <div style="margin-top:28px;display:flex;align-items:center;justify-content:space-between;padding:16px;border-radius:20px;background:rgba(255,255,255,.72);border:.5px solid rgba(255,255,255,.85);box-shadow:0 1px 1px rgba(0,0,0,.04)">
+                <div style="font:500 14.5px/1 -apple-system,system-ui;letter-spacing:-.01em">Portionen</div>
+                <div style="display:flex;align-items:center;gap:4px">
+                  <div onClick="{{ decServ }}" style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;border-radius:100px;background:linear-gradient(180deg,#FFFFFF,#EDEEF1);border:.5px solid rgba(0,0,0,.1);font-size:19px;cursor:pointer">−</div>
+                  <div style="width:54px;text-align:center;font:500 21px/1 -apple-system,system-ui;letter-spacing:-.02em">{{ dServings }}</div>
+                  <div onClick="{{ incServ }}" style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;border-radius:100px;background:linear-gradient(180deg,#FFFFFF,#EDEEF1);border:.5px solid rgba(0,0,0,.1);font-size:19px;cursor:pointer">+</div>
+                </div>
+              </div>
+
+              <div onClick="{{ calcNutri }}" style="margin-top:12px;height:54px;display:flex;align-items:center;padding:0 20px;border-radius:100px;background:linear-gradient(180deg,rgba(255,255,255,.95),rgba(240,241,244,.9));border:.5px solid rgba(0,0,0,.12);box-shadow:0 6px 18px -12px rgba(20,22,28,.5);font:500 15.5px/1 -apple-system,system-ui;letter-spacing:-.01em;cursor:pointer" style-hover="border-color:#0071E3;color:#0071E3">{{ calcLabel }}</div>
+
+              <sc-if value="{{ hasNutri }}" hint-placeholder-val="{{ false }}">
+                <div style="margin-top:16px;border-radius:22px;overflow:hidden;background:rgba(255,255,255,.74);backdrop-filter:blur(18px) saturate(180%);-webkit-backdrop-filter:blur(18px) saturate(180%);border:.5px solid rgba(255,255,255,.85);box-shadow:0 1px 1px rgba(0,0,0,.04),0 16px 40px -20px rgba(20,22,28,.4)">
+                  <div style="padding:18px;border-bottom:.5px solid rgba(0,0,0,.08)">
+                    <div style="font:500 10px/1 -apple-system,system-ui;letter-spacing:.2em;text-transform:uppercase;color:#86868B">Nährwerte gesamt</div>
+                    <div style="display:flex;align-items:baseline;gap:12px;margin-top:10px">
+                      <div style="font:600 34px/1 -apple-system,system-ui;letter-spacing:-.03em">{{ nTotalKcal }}</div>
+                      <div style="font:400 13px/1 -apple-system,system-ui;color:#86868B">{{ nTotalMacros }}</div>
+                    </div>
+                    <div style="margin-top:12px;font:400 13px/1.4 -apple-system,system-ui;color:#0071E3">{{ nPerServing }}</div>
+                  </div>
+                  <sc-for list="{{ nPer }}" as="p" hint-placeholder-count="3">
+                    <div style="display:flex;justify-content:space-between;gap:10px;padding:12px 18px;border-bottom:.5px solid rgba(0,0,0,.07);font:400 13px/1.3 -apple-system,system-ui">
+                      <span>{{ p.name }}</span>
+                      <span style="color:#86868B;white-space:nowrap">{{ p.line }}</span>
+                    </div>
+                  </sc-for>
+                  <div style="padding:14px 18px;font:400 11.5px/1.5 -apple-system,system-ui;color:#A1A1A6">{{ nNote }}</div>
+                </div>
+              </sc-if>
+
+              <sc-if value="{{ calcError }}" hint-placeholder-val="{{ false }}">
+                <div style="margin-top:16px;border-radius:18px;border:.5px solid rgba(0,0,0,.1);background:rgba(255,255,255,.8);padding:16px;font:400 13px/1.5 -apple-system,system-ui;color:#6E6E73">Die Nährwert-Schätzung ist grad nicht erreichbar. Kein Drama — das Rezept lässt sich trotzdem speichern, die Werte holst du später nach.</div>
+              </sc-if>
+
+              <textarea value="{{ dBody }}" onChange="{{ onBody }}" placeholder="Zubereitung, Notizen, was du nächstes Mal anders machst" style="margin-top:28px;width:100%;box-sizing:border-box;min-height:140px;padding:14px 16px;border-radius:20px;background:rgba(255,255,255,.75);border:.5px solid rgba(0,0,0,.1);box-shadow:inset 0 1px 0 rgba(255,255,255,.9);font-size:15.5px;line-height:1.55;letter-spacing:-.01em;resize:none"></textarea>
+
+              <sc-if value="{{ canDelete }}" hint-placeholder-val="{{ false }}">
+                <div onClick="{{ remove }}" style="margin-top:22px;height:48px;display:flex;align-items:center;padding:0 18px;border-radius:100px;border:.5px solid rgba(0,0,0,.12);background:rgba(255,255,255,.7);color:#C7362B;font:500 14.5px/1 -apple-system,system-ui;cursor:pointer" style-hover="background:#C7362B;color:#fff;border-color:#C7362B">Rezept löschen</div>
+              </sc-if>
+            </div>
+          </div>
+        </sc-if>
+
+      </div>
+    </x-import>
+
+    <div style="width:360px;display:flex;flex-direction:column;gap:26px">
+      <div>
+        <div style="font:500 10px/1 -apple-system,system-ui;letter-spacing:.2em;text-transform:uppercase;color:#86868B;padding-bottom:10px;border-bottom:1px solid rgba(0,0,0,.09)">Was sich geändert hat</div>
+        <div style="font:400 13.5px/1.6 -apple-system,system-ui;color:#1D1D1F;margin-top:14px">Papier und Tomatenrot sind weg. Stattdessen: Milchglas-Karten über einem hellen Silberverlauf, .5px-Haarlinien, weiche Radien (22px) und SF-Typografie mit engem Tracking. Fotoflächen sind gebürstetes Silber mit Licht-Sweep.</div>
+      </div>
+      <div>
+        <div style="font:500 10px/1 -apple-system,system-ui;letter-spacing:.2em;text-transform:uppercase;color:#86868B;padding-bottom:10px;border-bottom:1px solid rgba(0,0,0,.09)">Akzent</div>
+        <div style="font:400 13.5px/1.6 -apple-system,system-ui;color:#1D1D1F;margin-top:14px">Primäraktionen laufen in Graphit (dunkler Verlauf mit Innenlicht) statt in Farbe — Luxus kommt aus Material, nicht aus Buntheit. Ein einziges Systemblau bleibt für Links, aktive Zustände und Bestätigungen.</div>
+      </div>
+      <div>
+        <div style="font:500 10px/1 -apple-system,system-ui;letter-spacing:.2em;text-transform:uppercase;color:#86868B;padding-bottom:10px;border-bottom:1px solid rgba(0,0,0,.09)">Nächste Schritte</div>
+        <div style="font:400 13.5px/1.6 -apple-system,system-ui;color:#1D1D1F;margin-top:14px">Echte Food-Fotos (dunkel, kontrastreich — sie tragen die Farbe) · SF-Symbols-ähnliche Icons in der Tab-Leiste statt der Platzhalter · optional ein Dark-Mode-Zwilling in Anthrazit und Chrom.</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:900,&quot;height&quot;:1020},&quot;startTab&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;Rezepte&quot;,&quot;Zutaten&quot;,&quot;Was koch ich?&quot;,&quot;Merkliste&quot;],&quot;default&quot;:&quot;Rezepte&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Prototyp&quot;},&quot;showSearch&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Rezepte&quot;},&quot;showNutriOnCards&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Rezepte&quot;}}">
+class Component extends DCLogic {
+  NUTRI = {
+    'Pizzamehl Tipo 00': { per: 'g', kcal: 341, p: 11, f: 1, c: 71, url: 'coop.ch/farina-tipo-00' },
+    'Fiordilatte': { per: 'g', kcal: 280, p: 18, f: 22, c: 2, url: 'migros.ch/fiordilatte' },
+    'San-Marzano-Tomaten': { per: 'g', kcal: 32, p: 1.4, f: 0.2, c: 5, url: 'coop.ch/san-marzano' },
+    'Basilikum': { per: 'g', kcal: 23, p: 3, f: 0.6, c: 2.7, url: '' },
+    'Olivenöl': { per: 'g', kcal: 884, p: 0, f: 100, c: 0, url: 'coop.ch/olivenoel' },
+    'Pouletbrust': { per: 'g', kcal: 106, p: 23, f: 1.2, c: 0, url: 'migros.ch/poulet' },
+    'Peperoni': { per: 'stk', kcal: 37, p: 1.5, f: 0.3, c: 6, url: '' },
+    'Griechischer Joghurt': { per: 'g', kcal: 97, p: 9, f: 5, c: 3.6, url: 'coop.ch/joghurt' },
+    'Paprikapulver': { per: 'g', kcal: 282, p: 14, f: 13, c: 54, url: '' },
+    'Spaghetti': { per: 'g', kcal: 357, p: 12, f: 1.5, c: 72, url: 'migros.ch/spaghetti' },
+    'Zitrone': { per: 'stk', kcal: 20, p: 0.7, f: 0.2, c: 3, url: '' },
+    'Vollrahm': { per: 'g', kcal: 345, p: 2.2, f: 36, c: 3, url: 'coop.ch/vollrahm' },
+    'Parmigiano Reggiano': { per: 'g', kcal: 402, p: 33, f: 29, c: 0, url: 'coop.ch/parmigiano' }
+  };
+  UNIT_G = { el: 14, tl: 5, bund: 20, prise: 1 };
+
+  state = {
+    tab: null, view: 'list', q: '', libQ: '',
+    cookInput: '', cookLoading: false, cookResult: null,
+    lonInput: '', calcLoading: false, calcError: false,
+    draft: null, editIdx: null, sugRow: null, removedLib: [],
+    recipes: [
+      { id: 1, title: 'Pizza Napoletana Margherita', servings: 3, photo: true, body: '48 h kalte Gare, Ofen auf Anschlag mit Stahl. Teig nur mit den Fingerspitzen aufziehen, Rand nicht plattdrücken.',
+        ings: [
+          { name: 'Pizzamehl Tipo 00', amount: '500 g', url: 'coop.ch/farina-tipo-00', shot: true },
+          { name: 'Fiordilatte', amount: '250 g', url: 'migros.ch/fiordilatte', shot: true },
+          { name: 'San-Marzano-Tomaten', amount: '300 g', url: 'coop.ch/san-marzano', shot: true },
+          { name: 'Basilikum', amount: '1 Bund', url: '', shot: false },
+          { name: 'Olivenöl', amount: '2 EL', url: 'coop.ch/olivenoel', shot: false }
+        ], nutri: null },
+      { id: 2, title: 'Poulet-Spiessli vom Grill', servings: 2, photo: true, body: 'Über Nacht in Joghurt-Paprika-Marinade. Direkte Hitze, zwei Minuten pro Seite, dann in die indirekte Zone ziehen.',
+        ings: [
+          { name: 'Pouletbrust', amount: '500 g', url: 'migros.ch/poulet', shot: true },
+          { name: 'Peperoni', amount: '2 Stk', url: '', shot: false },
+          { name: 'Griechischer Joghurt', amount: '150 g', url: 'coop.ch/joghurt', shot: true },
+          { name: 'Paprikapulver', amount: '1 TL', url: '', shot: false }
+        ], nutri: null },
+      { id: 3, title: 'Pasta al Limone', servings: 2, photo: false, body: 'Rahm nur warm ziehen lassen, Zitrone erst vom Feuer weg. Pastawasser ist die halbe Sauce.',
+        ings: [
+          { name: 'Spaghetti', amount: '250 g', url: 'migros.ch/spaghetti', shot: true },
+          { name: 'Zitrone', amount: '2 Stk', url: '', shot: false },
+          { name: 'Vollrahm', amount: '150 g', url: 'coop.ch/vollrahm', shot: true },
+          { name: 'Parmigiano Reggiano', amount: '60 g', url: 'coop.ch/parmigiano', shot: true }
+        ], nutri: null }
+    ],
+    longlist: [
+      { id: 1, note: 'Tonkatsu-Sando von diesem Basler Beizli', url: 'https://www.youtube.com/watch?v=aBcD1234', done: false },
+      { id: 2, note: 'Focaccia mit Trauben — Screenshot vom Herbstmarkt', url: 'https://images.example.com/focaccia.jpg', done: false },
+      { id: 3, note: 'Kalbsbries anbraten, endlich mal trauen', url: '', done: true }
+    ]
+  };
+
+  componentDidMount() {
+    if (this.state.recipes.some(r => !r.nutri)) {
+      this.setState(s => ({ recipes: s.recipes.map(r => r.nutri ? r : { ...r, nutri: this.compute(r.ings) }) }));
+    }
+  }
+
+  grams(amount, per) {
+    const n = parseFloat(String(amount).replace(',', '.')) || 0;
+    const a = String(amount).toLowerCase();
+    if (per === 'stk') return n;
+    if (/\bkg\b/.test(a)) return n * 1000;
+    if (/\bg\b/.test(a) || /\bml\b/.test(a) || /\bdl\b/.test(a)) return /\bdl\b/.test(a) ? n * 100 : n;
+    for (const k in this.UNIT_G) if (a.includes(k)) return n * this.UNIT_G[k];
+    return n;
+  }
+  r0(x) { return Math.round(x); }
+  compute(ings) {
+    const per = [], t = { kcal: 0, p: 0, f: 0, c: 0 };
+    let unknown = 0;
+    ings.forEach(ig => {
+      if (!ig.name) return;
+      const e = this.NUTRI[ig.name];
+      if (!e) { unknown++; per.push({ name: ig.name, kcal: null }); return; }
+      const q = this.grams(ig.amount, e.per);
+      const k = e.per === 'stk' ? q : q / 100;
+      const v = { kcal: e.kcal * k, p: e.p * k, f: e.f * k, c: e.c * k };
+      t.kcal += v.kcal; t.p += v.p; t.f += v.f; t.c += v.c;
+      per.push({ name: ig.name, kcal: this.r0(v.kcal), p: this.r0(v.p), f: this.r0(v.f), c: this.r0(v.c) });
+    });
+    return {
+      kcal: this.r0(t.kcal), p: this.r0(t.p), f: this.r0(t.f), c: this.r0(t.c), per,
+      note: unknown
+        ? unknown + ' Zutat(en) ohne Nährwertangabe — Schätzung entsprechend grob. Screenshot der Tabelle nachreichen macht sie genauer.'
+        : 'Schätzung auf Basis der Bibliothekswerte pro 100 g / Stück, hochgerechnet auf deine Mengen. Abweichung realistisch ±10 %.'
+    };
+  }
+  library() {
+    const map = new Map();
+    this.state.recipes.forEach(r => r.ings.forEach(ig => {
+      if (!ig.name || this.state.removedLib.includes(ig.name)) return;
+      if (!map.has(ig.name)) map.set(ig.name, { name: ig.name, url: ig.url, shot: ig.shot, uses: [] });
+      const e = map.get(ig.name);
+      if (ig.url && !e.url) e.url = ig.url;
+      if (ig.shot) e.shot = true;
+      e.uses.push(r.title);
+    }));
+    return [...map.values()].sort((a, b) => a.name.localeCompare(b.name));
+  }
+  nutriLine(name) {
+    const e = this.NUTRI[name];
+    if (!e) return 'Nährwerte offen — Screenshot fehlt';
+    const b = e.per === 'stk' ? '/ Stück' : '/ 100 g';
+    return e.kcal + ' kcal · ' + e.p + ' g E · ' + e.f + ' g F · ' + e.c + ' g KH ' + b;
+  }
+  blankIng() { return { name: '', amount: '', url: '', shot: false }; }
+  patchDraft(fn) { this.setState(s => { const d = { ...s.draft }; fn(d); return { draft: d }; }); }
+  patchIng(i, k, v) {
+    this.setState(s => {
+      const ings = s.draft.ings.map((x, j) => j === i ? { ...x, [k]: v } : x);
+      return { draft: { ...s.draft, ings } };
+    });
+  }
+
+  renderVals() {
+    const st = this.state;
+    const tab = st.tab || ({ 'Rezepte': 'recipes', 'Zutaten': 'ingredients', 'Was koch ich?': 'cook', 'Merkliste': 'longlist' }[this.props.startTab] || 'recipes');
+    const withNutri = this.props.showNutriOnCards !== false;
+    const q = st.q.trim().toLowerCase();
+
+    const cards = st.recipes
+      .filter(r => !q || r.title.toLowerCase().includes(q) || r.ings.some(i => i.name.toLowerCase().includes(q)))
+      .map(r => {
+        const idx = st.recipes.indexOf(r);
+        const n = r.nutri;
+        return {
+          title: r.title,
+          ingLine: r.ings.map(x => x.name).filter(Boolean).join(' · '),
+          kcal: n ? n.kcal + ' kcal' : 'kcal offen',
+          macros: n ? n.p + ' g E · ' + n.f + ' g F · ' + n.c + ' g KH' : 'noch nicht berechnet',
+          photoLabel: r.photo ? 'Foto' : 'Kein Foto',
+          servingsLabel: r.servings + ' Portionen',
+          open: () => this.setState({ view: 'edit', editIdx: idx, draft: JSON.parse(JSON.stringify(r)), calcError: false, sugRow: null })
+        };
+      });
+
+    const lq = st.libQ.trim().toLowerCase();
+    const lib = this.library().filter(x => !lq || x.name.toLowerCase().includes(lq)).map(x => ({
+      name: x.name,
+      nutriLine: this.nutriLine(x.name),
+      source: x.uses.length > 1 ? 'in ' + x.uses.length + ' Rezepten' : 'in „' + x.uses[0] + '"',
+      shotLabel: x.shot ? 'SHOT' : '—',
+      remove: () => this.setState(s => ({ removedLib: [...s.removedLib, x.name] }))
+    }));
+
+    const tabDefs = [['recipes', 'Rezepte'], ['ingredients', 'Zutaten'], ['cook', 'Was koch ich?'], ['longlist', 'Merkliste']];
+    const tabs = tabDefs.map(([k, label]) => ({
+      label,
+      color: tab === k ? '#1D1D1F' : '#A1A1A6',
+      fill: tab === k ? 'linear-gradient(180deg,#4A4A4D,#1D1D1F)' : 'transparent',
+      glow: tab === k ? '0 4px 10px -4px rgba(0,0,0,.5)' : 'none',
+      go: () => this.setState({ tab: k, view: 'list' })
+    }));
+
+    const longlist = st.longlist.map((l, i) => ({
+      note: l.note, url: l.url, hasUrl: !!l.url,
+      kind: /youtube|vimeo|tiktok|instagram|youtu\.be/i.test(l.url) ? 'Video' : (/\.(jpg|jpeg|png|webp|heic)$/i.test(l.url) ? 'Bild' : (l.url ? 'Link' : 'Notiz')),
+      mark: l.done ? '✓' : '',
+      checkBg: l.done ? 'linear-gradient(180deg,#4A4A4D,#1D1D1F)' : 'rgba(255,255,255,.7)',
+      checkBorder: l.done ? '#1D1D1F' : 'rgba(0,0,0,.2)',
+      color: l.done ? '#A1A1A6' : '#1D1D1F',
+      deco: l.done ? 'line-through' : 'none',
+      toggle: () => this.setState(s => ({ longlist: s.longlist.map((x, j) => j === i ? { ...x, done: !x.done } : x) })),
+      remove: () => this.setState(s => ({ longlist: s.longlist.filter((x, j) => j !== i) }))
+    }));
+
+    const d = st.draft;
+    const dn = d && d.nutri;
+    const rows = d ? d.ings.map((ig, i) => {
+      const term = (ig.name || '').trim().toLowerCase();
+      const sug = term.length > 0
+        ? this.library().filter(x => x.name.toLowerCase().includes(term) && x.name.toLowerCase() !== term).slice(0, 3)
+          .map(x => ({ name: x.name, nutriLine: this.nutriLine(x.name), pick: () => {
+            this.setState(s => ({
+              draft: { ...s.draft, ings: s.draft.ings.map((y, j) => j === i ? { ...y, name: x.name, url: x.url || y.url, shot: x.shot || y.shot } : y) },
+              sugRow: null
+            }));
+          } }))
+        : [];
+      return {
+        name: ig.name, amount: ig.amount, url: ig.url,
+        showSug: st.sugRow === i && sug.length > 0, sug,
+        shotLabel: ig.shot ? 'Screenshot Nährwerte ✓' : 'Screenshot Nährwerttabelle',
+        shotColor: ig.shot ? '#0071E3' : '#86868B',
+        onName: e => { const v = e.target.value; this.setState({ sugRow: i }); this.patchIng(i, 'name', v); },
+        onAmount: e => this.patchIng(i, 'amount', e.target.value),
+        onUrl: e => this.patchIng(i, 'url', e.target.value),
+        onFocus: () => this.setState({ sugRow: i }),
+        shoot: () => this.patchIng(i, 'shot', !ig.shot),
+        remove: () => this.setState(s => ({ draft: { ...s.draft, ings: s.draft.ings.filter((x, j) => j !== i) } }))
+      };
+    }) : [];
+
+    const perServ = dn && d.servings ? Math.round(dn.kcal / d.servings) : null;
+
+    return {
+      isList: st.view === 'list', isEdit: st.view === 'edit',
+      onRecipes: st.view === 'list' && tab === 'recipes',
+      onIngredients: st.view === 'list' && tab === 'ingredients',
+      onCook: st.view === 'list' && tab === 'cook',
+      onList4: st.view === 'list' && tab === 'longlist',
+      tabs, cards, lib, longlist, withNutri,
+      withSearch: this.props.showSearch !== false,
+      noCards: cards.length === 0, noLib: lib.length === 0, noLong: longlist.length === 0,
+      recipeCount: st.recipes.length + (st.recipes.length === 1 ? ' Karte' : ' Karten'),
+      openCount: st.longlist.filter(l => !l.done).length + ' offen',
+      q: st.q, onQ: e => this.setState({ q: e.target.value }),
+      libQ: st.libQ, onLibQ: e => this.setState({ libQ: e.target.value }),
+
+      newRecipe: () => this.setState({ view: 'edit', editIdx: null, calcError: false, sugRow: null,
+        draft: { id: Date.now(), title: '', body: '', servings: 2, photo: false, ings: [this.blankIng()], nutri: null } }),
+
+      cookInput: st.cookInput, onCookInput: e => this.setState({ cookInput: e.target.value }),
+      cookLoading: st.cookLoading,
+      cookBtnLabel: st.cookLoading ? 'Sucht ein Gericht …' : 'Rezept vorschlagen',
+      cookResult: !!st.cookResult && !st.cookLoading,
+      cookTitle: st.cookResult && st.cookResult.title,
+      cookBody: st.cookResult && st.cookResult.body,
+      cookMissing: st.cookResult && st.cookResult.missing,
+      pantryChips: ['Poulet', 'Zucchini', 'Reis', 'Zitrone', 'Joghurt', 'Peperoni'].map(label => ({
+        label, add: () => this.setState(s => ({ cookInput: s.cookInput ? s.cookInput + ', ' + label : label }))
+      })),
+      cookSuggest: () => {
+        if (st.cookLoading) return;
+        const items = st.cookInput.split(/[,\n]/).map(x => x.trim()).filter(Boolean);
+        this.setState({ cookLoading: true, cookResult: null });
+        setTimeout(() => {
+          const base = items.length ? items.slice(0, 3).join(', ') : 'was da ist';
+          this.setState({
+            cookLoading: false,
+            cookResult: {
+              title: items.length ? 'Pfanne mit ' + items[0] + ' und Zitrone' : 'Aglio e olio, weil immer',
+              body: 'Aus ' + base + ' wird ein Gericht in 25 Minuten: Zwiebel in Olivenöl anziehen, ' + (items[0] || 'Gemüse').toLowerCase() + ' scharf anbraten und beiseitestellen. Reis oder Pasta salzig kochen, Sud mit Zitronenabrieb und einem Löffel Joghurt aufschlagen, alles zusammenwerfen, mit Salz und viel schwarzem Pfeffer abschmecken.',
+              missing: 'Fehlt noch für eine ausgewogene Mahlzeit: eine Handvoll Blattsalat und Kichererbsen oder Nüsse für Protein.'
+            }
+          });
+        }, 1500);
+      },
+      adoptCook: () => {
+        const cr = st.cookResult; if (!cr) return;
+        const ings = st.cookInput.split(/[,\n]/).map(x => x.trim()).filter(Boolean).map(n => ({ name: n, amount: '', url: '', shot: false }));
+        this.setState({ view: 'edit', editIdx: null, sugRow: null, calcError: false,
+          draft: { id: Date.now(), title: cr.title, body: cr.body, servings: 2, photo: false, ings: ings.length ? ings : [this.blankIng()], nutri: null } });
+      },
+
+      lonInput: st.lonInput, onLonInput: e => this.setState({ lonInput: e.target.value }),
+      addLong: () => {
+        const v = st.lonInput.trim(); if (!v) return;
+        const isUrl = /^https?:\/\//i.test(v);
+        this.setState(s => ({ lonInput: '', longlist: [{ id: Date.now(), note: isUrl ? 'Link gemerkt' : v, url: isUrl ? v : '', done: false }, ...s.longlist] }));
+      },
+      addLongImage: () => this.setState(s => ({ longlist: [{ id: Date.now(), note: 'Foto aus der Galerie', url: 'https://images.example.com/upload.jpg', done: false }, ...s.longlist] })),
+
+      rows, ingCount: d ? d.ings.length + (d.ings.length === 1 ? ' Zeile' : ' Zeilen') : '',
+      dTitle: d ? d.title : '', dBody: d ? d.body : '', dServings: d ? d.servings : 2,
+      editKicker: st.editIdx === null ? 'Neues Rezept' : 'Rezept bearbeiten',
+      canDelete: st.editIdx !== null,
+      photoState: d && d.photo ? 'Foto vom Gericht ✓' : 'Noch kein Foto',
+      photoAction: d && d.photo ? 'Bild entfernen' : 'Kamera öffnen',
+      shootPhoto: () => this.patchDraft(x => { x.photo = !x.photo; }),
+      onTitle: e => { const v = e.target.value; this.patchDraft(x => { x.title = v; }); },
+      onBody: e => { const v = e.target.value; this.patchDraft(x => { x.body = v; }); },
+      incServ: () => this.patchDraft(x => { x.servings = Math.min(12, x.servings + 1); }),
+      decServ: () => this.patchDraft(x => { x.servings = Math.max(1, x.servings - 1); }),
+      addIng: () => this.setState(s => ({ draft: { ...s.draft, ings: [...s.draft.ings, this.blankIng()] }, sugRow: null })),
+
+      calcLabel: st.calcLoading ? 'Rechnet …' : 'Nährwerte berechnen',
+      calcError: st.calcError,
+      calcNutri: () => {
+        if (st.calcLoading) return;
+        this.setState({ calcLoading: true, calcError: false });
+        setTimeout(() => this.setState(s => ({ calcLoading: false, draft: { ...s.draft, nutri: this.compute(s.draft.ings) } })), 1200);
+      },
+      hasNutri: !!dn && !st.calcLoading,
+      nTotalKcal: dn ? dn.kcal + ' kcal' : '',
+      nTotalMacros: dn ? dn.p + ' g E · ' + dn.f + ' g F · ' + dn.c + ' g KH' : '',
+      nPerServing: perServ ? 'Pro Portion ' + perServ + ' kcal bei ' + d.servings + ' Portionen' : '',
+      nPer: dn ? dn.per.map(p => ({ name: p.name, line: p.kcal === null ? 'keine Werte' : p.kcal + ' kcal · ' + p.p + '/' + p.f + '/' + p.c + ' g' })) : [],
+      nNote: dn ? dn.note : '',
+
+      cancel: () => this.setState({ view: 'list', draft: null, editIdx: null, sugRow: null }),
+      save: () => this.setState(s => {
+        const clean = { ...s.draft, title: s.draft.title.trim() || 'Ohne Titel', ings: s.draft.ings.filter(i => i.name.trim()) };
+        const recipes = s.editIdx === null ? [clean, ...s.recipes] : s.recipes.map((r, i) => i === s.editIdx ? clean : r);
+        return { recipes, view: 'list', tab: 'recipes', draft: null, editIdx: null, sugRow: null };
+      }),
+      remove: () => this.setState(s => ({ recipes: s.recipes.filter((r, i) => i !== s.editIdx), view: 'list', draft: null, editIdx: null }))
+    };
+  }
+}
+
+</script>
+</body>
+</html>

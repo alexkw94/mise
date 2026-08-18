@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Archivo:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#E7DCC5;font-family:Archivo,system-ui,sans-serif}
+a{color:#9E2C20}a:hover{color:#C0392B}
+input,textarea,button{font-family:Archivo,system-ui,sans-serif}
+input:focus-visible,textarea:focus-visible,button:focus-visible{outline:2px solid #C0392B;outline-offset:2px}
+::selection{background:rgba(192,57,43,.18)}
+.mlk-scroll::-webkit-scrollbar{width:0}
+</style>
+</helmet>
+
+<div style="min-height:100vh;padding:40px 48px 64px;box-sizing:border-box;display:flex;flex-direction:column;gap:28px">
+
+  <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:24px;border-bottom:2px solid #2B2622;padding-bottom:14px">
+    <div>
+      <div style="font:600 11px/1 Archivo;letter-spacing:.16em;text-transform:uppercase;color:#9E2C20">My Little Kitchen · Design-Referenz</div>
+      <div style="font:400 40px/1.05 'Instrument Serif',serif;color:#2B2622;margin-top:8px">Küchenkarte — 4 Tabs, ein Formular</div>
+    </div>
+    <div style="font:400 13px/1.5 Archivo;color:#6B6154;max-width:340px;text-align:left">Klickbarer Prototyp: Tabs unten, Karte antippen für Detail/Bearbeiten, Nährwerte berechnen und KI-Vorschlag laufen als Mock.</div>
+  </div>
+
+  <div style="display:flex;gap:44px;align-items:flex-start;flex-wrap:wrap">
+
+    <x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" hint-size="402px,874px">
+      <div style="height:100%;display:flex;flex-direction:column;background:#F3ECDE;color:#2B2622">
+
+        <sc-if value="{{ isList }}" hint-placeholder-val="{{ true }}">
+          <div style="flex:1;display:flex;flex-direction:column;min-height:0">
+
+            <sc-if value="{{ onRecipes }}" hint-placeholder-val="{{ true }}">
+              <div style="padding:60px 20px 14px;background:#F3ECDE;border-bottom:1px solid #D8CBB0">
+                <div style="font:600 10px/1 Archivo;letter-spacing:.18em;text-transform:uppercase;color:#9E2C20">Meine Sammlung</div>
+                <div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-top:6px">
+                  <div style="font:400 34px/1 'Instrument Serif',serif">Rezepte</div>
+                  <div style="font:500 12px/1 Archivo;color:#6B6154">{{ recipeCount }}</div>
+                </div>
+                <sc-if value="{{ withSearch }}" hint-placeholder-val="{{ true }}">
+                  <input placeholder="Rezept oder Zutat suchen" value="{{ q }}" onChange="{{ onQ }}" style="margin-top:14px;width:100%;box-sizing:border-box;height:44px;padding:0 14px;background:#FBF7EE;border:1px solid #D8CBB0;color:#2B2622;font-size:15px" />
+                </sc-if>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ onIngredients }}" hint-placeholder-val="{{ false }}">
+              <div style="padding:60px 20px 14px;background:#F3ECDE;border-bottom:1px solid #D8CBB0">
+                <div style="font:600 10px/1 Archivo;letter-spacing:.18em;text-transform:uppercase;color:#9E2C20">Baut sich selbst auf</div>
+                <div style="font:400 34px/1 'Instrument Serif',serif;margin-top:6px">Zutaten</div>
+                <input placeholder="Zutat suchen" value="{{ libQ }}" onChange="{{ onLibQ }}" style="margin-top:14px;width:100%;box-sizing:border-box;height:44px;padding:0 14px;background:#FBF7EE;border:1px solid #D8CBB0;color:#2B2622;font-size:15px" />
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ onCook }}" hint-placeholder-val="{{ false }}">
+              <div style="padding:60px 20px 14px;background:#F3ECDE;border-bottom:1px solid #D8CBB0">
+                <div style="font:600 10px/1 Archivo;letter-spacing:.18em;text-transform:uppercase;color:#9E2C20">Aus dem Kühlschrank</div>
+                <div style="font:400 34px/1 'Instrument Serif',serif;margin-top:6px">Was koch ich?</div>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ onList4 }}" hint-placeholder-val="{{ false }}">
+              <div style="padding:60px 20px 14px;background:#F3ECDE;border-bottom:1px solid #D8CBB0">
+                <div style="font:600 10px/1 Archivo;letter-spacing:.18em;text-transform:uppercase;color:#9E2C20">Noch auszuprobieren</div>
+                <div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-top:6px">
+                  <div style="font:400 34px/1 'Instrument Serif',serif">Merkliste</div>
+                  <div style="font:500 12px/1 Archivo;color:#6B6154">{{ openCount }}</div>
+                </div>
+              </div>
+            </sc-if>
+
+            <div class="mlk-scroll" style="flex:1;overflow:auto;padding:16px 20px 132px;position:relative">
+
+              <sc-if value="{{ onRecipes }}" hint-placeholder-val="{{ true }}">
+                <div style="display:flex;flex-direction:column;gap:16px">
+                  <sc-for list="{{ cards }}" as="r" hint-placeholder-count="2">
+                    <div onClick="{{ r.open }}" style="background:#FBF7EE;border:1px solid #D8CBB0;box-shadow:0 2px 0 rgba(43,38,34,.06),0 8px 18px -12px rgba(43,38,34,.35);cursor:pointer" style-hover="border-color:#C0392B">
+                      <div style="height:150px;background:#EDE3CE;border-bottom:1px solid #D8CBB0;display:flex;align-items:flex-end;justify-content:space-between;padding:12px;background-image:repeating-linear-gradient(135deg,rgba(216,203,176,.55) 0 2px,transparent 2px 11px)">
+                        <div style="font:600 10px/1 Archivo;letter-spacing:.14em;text-transform:uppercase;color:#6B6154;background:#FBF7EE;padding:5px 8px">{{ r.photoLabel }}</div>
+                        <div style="font:500 11px/1 Archivo;color:#6B6154;background:#FBF7EE;padding:5px 8px">{{ r.servingsLabel }}</div>
+                      </div>
+                      <div style="padding:14px 14px 15px">
+                        <div style="font:400 23px/1.1 'Instrument Serif',serif">{{ r.title }}</div>
+                        <div style="font:400 13px/1.45 Archivo;color:#6B6154;margin-top:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ r.ingLine }}</div>
+                        <sc-if value="{{ withNutri }}" hint-placeholder-val="{{ true }}">
+                          <div style="margin-top:12px;padding-top:11px;border-top:1px solid #D8CBB0;display:flex;gap:10px;flex-wrap:wrap;font:500 12px/1 Archivo;color:#2B2622">
+                            <span style="color:#9E2C20;font-weight:700">{{ r.kcal }}</span>
+                            <span style="color:#6B6154">{{ r.macros }}</span>
+                          </div>
+                        </sc-if>
+                      </div>
+                    </div>
+                  </sc-for>
+                  <sc-if value="{{ noCards }}" hint-placeholder-val="{{ false }}">
+                    <div style="border:1px dashed #C0392B;background:#FBF7EE;padding:26px 20px;text-align:left">
+                      <div style="font:400 24px/1.15 'Instrument Serif',serif">Noch keine Karte.</div>
+                      <div style="font:400 14px/1.5 Archivo;color:#6B6154;margin-top:8px">Koch etwas Gutes und halt es fest — Foto, Zutaten, fertig. Dauert unter einer Minute.</div>
+                      <div onClick="{{ newRecipe }}" style="margin-top:16px;display:inline-flex;align-items:center;height:44px;padding:0 18px;background:#C0392B;color:#FBF7EE;font:600 14px/1 Archivo;cursor:pointer">Erstes Rezept anlegen</div>
+                    </div>
+                  </sc-if>
+                </div>
+              </sc-if>
+
+              <sc-if value="{{ onIngredients }}" hint-placeholder-val="{{ false }}">
+                <div style="display:flex;flex-direction:column;gap:0;border-top:1px solid #D8CBB0">
+                  <sc-for list="{{ lib }}" as="it" hint-placeholder-count="4">
+                    <div style="display:flex;gap:12px;align-items:center;padding:13px 0;border-bottom:1px solid #D8CBB0">
+                      <div style="width:50px;height:50px;flex:none;background:#EDE3CE;border:1px solid #D8CBB0;display:flex;align-items:center;justify-content:center;font:600 9px/1 Archivo;color:#6B6154;letter-spacing:.08em">{{ it.shotLabel }}</div>
+                      <div style="flex:1;min-width:0">
+                        <div style="font:400 18px/1.15 'Instrument Serif',serif;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ it.name }}</div>
+                        <div style="font:400 12px/1.4 Archivo;color:#6B6154;margin-top:3px">{{ it.nutriLine }}</div>
+                        <div style="font:500 11px/1.4 Archivo;color:#4E6E52;margin-top:3px">{{ it.source }}</div>
+                      </div>
+                      <div onClick="{{ it.remove }}" style="width:44px;height:44px;flex:none;display:flex;align-items:center;justify-content:center;color:#6B6154;font-size:17px;cursor:pointer" style-hover="color:#C0392B">✕</div>
+                    </div>
+                  </sc-for>
+                  <sc-if value="{{ noLib }}" hint-placeholder-val="{{ false }}">
+                    <div style="padding:24px 0;font:400 14px/1.5 Archivo;color:#6B6154">Die Bibliothek füllt sich von selbst, sobald du Zutaten in Rezepten erfasst.</div>
+                  </sc-if>
+                </div>
+              </sc-if>
+
+              <sc-if value="{{ onCook }}" hint-placeholder-val="{{ false }}">
+                <div style="display:flex;flex-direction:column;gap:14px">
+                  <div style="font:400 15px/1.5 Archivo;color:#6B6154">Was liegt herum? Tipp es ein — du bekommst ein konkretes Gericht plus die zwei, drei Dinge, die noch fehlen.</div>
+                  <textarea value="{{ cookInput }}" onChange="{{ onCookInput }}" placeholder="z.B. Poulet, Zucchini, Reis, Zitrone, Joghurt" style="width:100%;box-sizing:border-box;min-height:110px;padding:12px 14px;background:#FBF7EE;border:1px solid #D8CBB0;color:#2B2622;font-size:15px;line-height:1.5;resize:none"></textarea>
+                  <div style="display:flex;gap:8px;flex-wrap:wrap">
+                    <sc-for list="{{ pantryChips }}" as="c" hint-placeholder-count="4">
+                      <div onClick="{{ c.add }}" style="height:36px;display:flex;align-items:center;padding:0 12px;background:#FBF7EE;border:1px solid #D8CBB0;font:500 13px/1 Archivo;color:#6B6154;cursor:pointer" style-hover="border-color:#C0392B;color:#C0392B">{{ c.label }}</div>
+                    </sc-for>
+                  </div>
+                  <div onClick="{{ cookSuggest }}" style="height:52px;display:flex;align-items:center;padding:0 18px;background:#C0392B;color:#FBF7EE;font:600 15px/1 Archivo;cursor:pointer" style-hover="background:#9E2C20">{{ cookBtnLabel }}</div>
+
+                  <sc-if value="{{ cookLoading }}" hint-placeholder-val="{{ false }}">
+                    <div style="background:#FBF7EE;border:1px solid #D8CBB0;padding:18px">
+                      <div style="font:600 10px/1 Archivo;letter-spacing:.16em;text-transform:uppercase;color:#9E2C20">Denkt nach</div>
+                      <div style="height:12px;background:#EDE3CE;margin-top:14px;width:80%"></div>
+                      <div style="height:12px;background:#EDE3CE;margin-top:8px;width:60%"></div>
+                      <div style="height:12px;background:#EDE3CE;margin-top:8px;width:70%"></div>
+                    </div>
+                  </sc-if>
+
+                  <sc-if value="{{ cookResult }}" hint-placeholder-val="{{ false }}">
+                    <div style="background:#FBF7EE;border:1px solid #D8CBB0;box-shadow:0 2px 0 rgba(43,38,34,.06);padding:18px">
+                      <div style="font:600 10px/1 Archivo;letter-spacing:.16em;text-transform:uppercase;color:#4E6E52">Vorschlag</div>
+                      <div style="font:400 26px/1.1 'Instrument Serif',serif;margin-top:8px">{{ cookTitle }}</div>
+                      <div style="font:400 14px/1.55 Archivo;color:#2B2622;margin-top:12px">{{ cookBody }}</div>
+                      <div style="margin-top:14px;padding-top:12px;border-top:1px solid #D8CBB0;font:500 12px/1.5 Archivo;color:#6B6154">{{ cookMissing }}</div>
+                      <div onClick="{{ adoptCook }}" style="margin-top:16px;height:46px;display:flex;align-items:center;padding:0 16px;border:1px solid #4E6E52;color:#4E6E52;font:600 14px/1 Archivo;cursor:pointer" style-hover="background:#4E6E52;color:#FBF7EE">In meine Rezepte übernehmen</div>
+                    </div>
+                  </sc-if>
+                </div>
+              </sc-if>
+
+              <sc-if value="{{ onList4 }}" hint-placeholder-val="{{ false }}">
+                <div style="display:flex;flex-direction:column;gap:14px">
+                  <div style="display:flex;gap:8px">
+                    <input value="{{ lonInput }}" onChange="{{ onLonInput }}" placeholder="Notiz oder Link einfügen" style="flex:1;min-width:0;height:48px;padding:0 14px;background:#FBF7EE;border:1px solid #D8CBB0;color:#2B2622;font-size:15px" />
+                    <div onClick="{{ addLong }}" style="width:48px;height:48px;flex:none;display:flex;align-items:center;justify-content:center;background:#C0392B;color:#FBF7EE;font:400 24px/1 Archivo;cursor:pointer" style-hover="background:#9E2C20">＋</div>
+                  </div>
+                  <div style="display:flex;gap:8px">
+                    <div onClick="{{ addLongImage }}" style="flex:1;height:44px;display:flex;align-items:center;padding:0 14px;border:1px dashed #D8CBB0;font:500 13px/1 Archivo;color:#6B6154;cursor:pointer" style-hover="border-color:#C0392B;color:#C0392B">Bild hochladen</div>
+                  </div>
+                  <div style="border-top:1px solid #D8CBB0">
+                    <sc-for list="{{ longlist }}" as="l" hint-placeholder-count="3">
+                      <div style="display:flex;gap:12px;align-items:flex-start;padding:13px 0;border-bottom:1px solid #D8CBB0">
+                        <div onClick="{{ l.toggle }}" style="width:26px;height:26px;flex:none;margin-top:2px;border:1.5px solid #6B6154;display:flex;align-items:center;justify-content:center;font:600 14px/1 Archivo;color:#4E6E52;cursor:pointer">{{ l.mark }}</div>
+                        <div style="flex:1;min-width:0">
+                          <div style="font:500 10px/1 Archivo;letter-spacing:.14em;text-transform:uppercase;color:#C99A3B">{{ l.kind }}</div>
+                          <div style="font:400 17px/1.3 'Instrument Serif',serif;margin-top:5px;color:{{ l.color }};text-decoration:{{ l.deco }}">{{ l.note }}</div>
+                          <sc-if value="{{ l.hasUrl }}" hint-placeholder-val="{{ false }}">
+                            <div style="font:400 12px/1.4 Archivo;color:#9E2C20;margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ l.url }}</div>
+                          </sc-if>
+                        </div>
+                        <div onClick="{{ l.remove }}" style="width:44px;height:44px;flex:none;display:flex;align-items:center;justify-content:center;color:#6B6154;font-size:17px;cursor:pointer" style-hover="color:#C0392B">✕</div>
+                      </div>
+                    </sc-for>
+                    <sc-if value="{{ noLong }}" hint-placeholder-val="{{ false }}">
+                      <div style="padding:24px 0;font:400 14px/1.5 Archivo;color:#6B6154">Nichts vorgemerkt. Wirf Videolinks, Screenshots und Ideen hier rein.</div>
+                    </sc-if>
+                  </div>
+                </div>
+              </sc-if>
+
+            </div>
+
+            <sc-if value="{{ onRecipes }}" hint-placeholder-val="{{ true }}">
+              <div onClick="{{ newRecipe }}" style="position:absolute;right:18px;bottom:112px;z-index:20;height:56px;display:flex;align-items:center;gap:10px;padding:0 22px;background:#C0392B;color:#FBF7EE;font:600 15px/1 Archivo;box-shadow:0 10px 24px -8px rgba(43,38,34,.6);cursor:pointer" style-hover="background:#9E2C20"><span style="font-size:22px;line-height:1">＋</span>Neues Rezept</div>
+            </sc-if>
+
+            <div style="flex:none;display:grid;grid-template-columns:repeat(4,1fr);border-top:2px solid #2B2622;background:#FBF7EE;padding-bottom:26px">
+              <sc-for list="{{ tabs }}" as="t" hint-placeholder-count="4">
+                <div onClick="{{ t.go }}" style="height:62px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;cursor:pointer;background:{{ t.bg }}">
+                  <div style="width:20px;height:20px;border:1.5px solid {{ t.color }};background:{{ t.fill }}"></div>
+                  <div style="font:600 10.5px/1 Archivo;letter-spacing:.02em;color:{{ t.color }}">{{ t.label }}</div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ isEdit }}" hint-placeholder-val="{{ false }}">
+          <div style="flex:1;display:flex;flex-direction:column;min-height:0">
+            <div style="padding:58px 16px 12px;background:#FBF7EE;border-bottom:2px solid #2B2622;display:flex;align-items:center;justify-content:space-between;gap:8px">
+              <div onClick="{{ cancel }}" style="height:44px;display:flex;align-items:center;padding:0 8px;font:500 14px/1 Archivo;color:#6B6154;cursor:pointer" style-hover="color:#C0392B">Abbrechen</div>
+              <div style="font:600 10px/1 Archivo;letter-spacing:.16em;text-transform:uppercase;color:#9E2C20">{{ editKicker }}</div>
+              <div onClick="{{ save }}" style="height:44px;display:flex;align-items:center;padding:0 16px;background:#C0392B;color:#FBF7EE;font:600 14px/1 Archivo;cursor:pointer" style-hover="background:#9E2C20">Speichern</div>
+            </div>
+
+            <div class="mlk-scroll" style="flex:1;overflow:auto;padding:18px 20px 40px">
+              <input value="{{ dTitle }}" onChange="{{ onTitle }}" placeholder="Titel des Gerichts" style="width:100%;box-sizing:border-box;background:transparent;border:none;border-bottom:1px solid #D8CBB0;padding:0 0 10px;font:400 30px/1.1 'Instrument Serif',serif;color:#2B2622" />
+
+              <div onClick="{{ shootPhoto }}" style="margin-top:20px;height:180px;background:#EDE3CE;border:1px solid #D8CBB0;background-image:repeating-linear-gradient(135deg,rgba(216,203,176,.55) 0 2px,transparent 2px 11px);display:flex;flex-direction:column;align-items:flex-start;justify-content:flex-end;padding:14px;gap:8px;cursor:pointer">
+                <div style="font:600 10px/1 Archivo;letter-spacing:.16em;text-transform:uppercase;color:#6B6154;background:#FBF7EE;padding:6px 9px">{{ photoState }}</div>
+                <div style="font:600 13px/1 Archivo;color:#FBF7EE;background:#2B2622;padding:11px 14px">{{ photoAction }}</div>
+              </div>
+
+              <div style="margin-top:26px;display:flex;align-items:baseline;justify-content:space-between">
+                <div style="font:600 10px/1 Archivo;letter-spacing:.18em;text-transform:uppercase;color:#9E2C20">Zutaten</div>
+                <div style="font:500 12px/1 Archivo;color:#6B6154">{{ ingCount }}</div>
+              </div>
+
+              <div style="margin-top:12px;display:flex;flex-direction:column;gap:12px">
+                <sc-for list="{{ rows }}" as="row" hint-placeholder-count="2">
+                  <div style="background:#FBF7EE;border:1px solid #D8CBB0;padding:12px;position:relative">
+                    <div style="display:flex;gap:8px">
+                      <input value="{{ row.name }}" onChange="{{ row.onName }}" onFocus="{{ row.onFocus }}" placeholder="Bezeichnung" style="flex:1;min-width:0;height:44px;padding:0 12px;background:#F3ECDE;border:1px solid #D8CBB0;font-size:15px;color:#2B2622" />
+                      <input value="{{ row.amount }}" onChange="{{ row.onAmount }}" placeholder="Menge" style="width:96px;flex:none;height:44px;padding:0 12px;background:#F3ECDE;border:1px solid #D8CBB0;font-size:15px;color:#2B2622" />
+                    </div>
+                    <sc-if value="{{ row.showSug }}" hint-placeholder-val="{{ false }}">
+                      <div style="margin-top:8px;border:1px solid #C0392B;background:#F3ECDE">
+                        <sc-for list="{{ row.sug }}" as="s" hint-placeholder-count="2">
+                          <div onClick="{{ s.pick }}" style="padding:11px 12px;border-bottom:1px solid #D8CBB0;cursor:pointer" style-hover="background:#EDE3CE">
+                            <div style="font:400 16px/1.2 'Instrument Serif',serif">{{ s.name }}</div>
+                            <div style="font:400 11.5px/1.3 Archivo;color:#6B6154;margin-top:3px">{{ s.nutriLine }}</div>
+                          </div>
+                        </sc-for>
+                      </div>
+                    </sc-if>
+                    <div style="display:flex;gap:8px;margin-top:8px">
+                      <input value="{{ row.url }}" onChange="{{ row.onUrl }}" placeholder="Produktlink Coop / Migros" style="flex:1;min-width:0;height:40px;padding:0 12px;background:#F3ECDE;border:1px solid #D8CBB0;font-size:13px;color:#2B2622" />
+                    </div>
+                    <div style="display:flex;gap:8px;margin-top:8px;align-items:center">
+                      <div onClick="{{ row.shoot }}" style="flex:1;height:40px;display:flex;align-items:center;padding:0 12px;border:1px dashed #D8CBB0;font:500 12px/1 Archivo;color:{{ row.shotColor }};cursor:pointer" style-hover="border-color:#C0392B">{{ row.shotLabel }}</div>
+                      <div onClick="{{ row.remove }}" style="width:44px;height:44px;flex:none;display:flex;align-items:center;justify-content:center;color:#6B6154;font-size:16px;cursor:pointer" style-hover="color:#C0392B">✕</div>
+                    </div>
+                  </div>
+                </sc-for>
+              </div>
+
+              <div onClick="{{ addIng }}" style="margin-top:12px;height:48px;display:flex;align-items:center;padding:0 14px;border:1px solid #2B2622;font:600 14px/1 Archivo;color:#2B2622;cursor:pointer" style-hover="background:#2B2622;color:#FBF7EE">＋ Zutat</div>
+
+              <div style="margin-top:26px;display:flex;align-items:center;justify-content:space-between;padding:14px;background:#FBF7EE;border:1px solid #D8CBB0">
+                <div style="font:600 13px/1 Archivo">Portionen</div>
+                <div style="display:flex;align-items:center;gap:2px">
+                  <div onClick="{{ decServ }}" style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;border:1px solid #D8CBB0;font-size:20px;cursor:pointer">−</div>
+                  <div style="width:52px;text-align:center;font:400 22px/1 'Instrument Serif',serif">{{ dServings }}</div>
+                  <div onClick="{{ incServ }}" style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;border:1px solid #D8CBB0;font-size:20px;cursor:pointer">＋</div>
+                </div>
+              </div>
+
+              <div onClick="{{ calcNutri }}" style="margin-top:12px;height:52px;display:flex;align-items:center;padding:0 16px;background:#4E6E52;color:#FBF7EE;font:600 15px/1 Archivo;cursor:pointer" style-hover="background:#3E5A42">{{ calcLabel }}</div>
+
+              <sc-if value="{{ hasNutri }}" hint-placeholder-val="{{ false }}">
+                <div style="margin-top:14px;background:#FBF7EE;border:1px solid #D8CBB0;box-shadow:0 2px 0 rgba(43,38,34,.06)">
+                  <div style="padding:16px;border-bottom:1px solid #D8CBB0">
+                    <div style="font:600 10px/1 Archivo;letter-spacing:.16em;text-transform:uppercase;color:#9E2C20">Nährwerte gesamt</div>
+                    <div style="display:flex;align-items:baseline;gap:10px;margin-top:8px">
+                      <div style="font:400 34px/1 'Instrument Serif',serif">{{ nTotalKcal }}</div>
+                      <div style="font:500 13px/1 Archivo;color:#6B6154">{{ nTotalMacros }}</div>
+                    </div>
+                    <div style="margin-top:10px;font:500 13px/1.4 Archivo;color:#4E6E52">{{ nPerServing }}</div>
+                  </div>
+                  <sc-for list="{{ nPer }}" as="p" hint-placeholder-count="3">
+                    <div style="display:flex;justify-content:space-between;gap:10px;padding:11px 16px;border-bottom:1px solid #D8CBB0;font:400 13px/1.3 Archivo">
+                      <span style="color:#2B2622">{{ p.name }}</span>
+                      <span style="color:#6B6154;white-space:nowrap">{{ p.line }}</span>
+                    </div>
+                  </sc-for>
+                  <div style="padding:12px 16px;font:400 11.5px/1.5 Archivo;color:#6B6154">{{ nNote }}</div>
+                </div>
+              </sc-if>
+
+              <sc-if value="{{ calcError }}" hint-placeholder-val="{{ false }}">
+                <div style="margin-top:14px;border:1px solid #C0392B;background:#FBF7EE;padding:14px;font:400 13px/1.5 Archivo;color:#9E2C20">Die Nährwert-Schätzung ist grad nicht erreichbar. Kein Drama — das Rezept lässt sich trotzdem speichern, die Werte holst du später nach.</div>
+              </sc-if>
+
+              <textarea value="{{ dBody }}" onChange="{{ onBody }}" placeholder="Zubereitung, Notizen, was du nächstes Mal anders machst" style="margin-top:26px;width:100%;box-sizing:border-box;min-height:130px;padding:12px 14px;background:#FBF7EE;border:1px solid #D8CBB0;color:#2B2622;font-size:15px;line-height:1.55;resize:none"></textarea>
+
+              <sc-if value="{{ canDelete }}" hint-placeholder-val="{{ false }}">
+                <div onClick="{{ remove }}" style="margin-top:20px;height:48px;display:flex;align-items:center;justify-content:flex-start;padding:0 14px;border:1px solid #C0392B;color:#C0392B;font:600 14px/1 Archivo;cursor:pointer" style-hover="background:#C0392B;color:#FBF7EE">Rezept löschen</div>
+              </sc-if>
+            </div>
+          </div>
+        </sc-if>
+
+      </div>
+    </x-import>
+
+    <div style="width:360px;display:flex;flex-direction:column;gap:22px">
+      <div>
+        <div style="font:600 10px/1 Archivo;letter-spacing:.18em;text-transform:uppercase;color:#9E2C20;border-bottom:2px solid #2B2622;padding-bottom:8px">Annahmen</div>
+        <div style="font:400 13.5px/1.6 Archivo;color:#2B2622;margin-top:12px">Ich folge der Design-Richtung aus dem Brief (Küchenkarte, Tomatenrot, Serif-Display) statt einer generischen Systemvorlage — sie ist dort explizit gesetzt. Serif: Instrument Serif, Body: Archivo. Fotos sind bewusst Platzhalter, bis echte Bilder da sind.</div>
+      </div>
+      <div>
+        <div style="font:600 10px/1 Archivo;letter-spacing:.18em;text-transform:uppercase;color:#9E2C20;border-bottom:2px solid #2B2622;padding-bottom:8px">Was funktioniert</div>
+        <div style="font:400 13.5px/1.6 Archivo;color:#2B2622;margin-top:12px">Tabs, Suche, Rezept anlegen/bearbeiten/löschen, Zutaten-Autocomplete mit Übernahme der Nährwerte, Berechnung pro 100 g hochgerechnet, Portionsrechnung, KI-Vorschlag mit Übernahme, Merkliste mit Link-Erkennung und Abhaken.</div>
+      </div>
+      <div>
+        <div style="font:600 10px/1 Archivo;letter-spacing:.18em;text-transform:uppercase;color:#9E2C20;border-bottom:2px solid #2B2622;padding-bottom:8px">Nächste Schritte</div>
+        <div style="font:400 13.5px/1.6 Archivo;color:#2B2622;margin-top:12px">Echte Food-Fotos einsetzen · Icon-Set (Lucide) statt der Platzhalter-Quadrate in der Tab-Leiste · Fehler- und Offline-Zustände durchspielen · dann Übergabe an die Implementierung.</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:900,&quot;height&quot;:1020},&quot;startTab&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;Rezepte&quot;,&quot;Zutaten&quot;,&quot;Was koch ich?&quot;,&quot;Merkliste&quot;],&quot;default&quot;:&quot;Rezepte&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Prototyp&quot;},&quot;showSearch&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Rezepte&quot;},&quot;showNutriOnCards&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Rezepte&quot;}}">
+class Component extends DCLogic {
+  NUTRI = {
+    'Pizzamehl Tipo 00': { per: 'g', kcal: 341, p: 11, f: 1, c: 71, url: 'coop.ch/farina-tipo-00' },
+    'Fiordilatte': { per: 'g', kcal: 280, p: 18, f: 22, c: 2, url: 'migros.ch/fiordilatte' },
+    'San-Marzano-Tomaten': { per: 'g', kcal: 32, p: 1.4, f: 0.2, c: 5, url: 'coop.ch/san-marzano' },
+    'Basilikum': { per: 'g', kcal: 23, p: 3, f: 0.6, c: 2.7, url: '' },
+    'Olivenöl': { per: 'g', kcal: 884, p: 0, f: 100, c: 0, url: 'coop.ch/olivenoel' },
+    'Pouletbrust': { per: 'g', kcal: 106, p: 23, f: 1.2, c: 0, url: 'migros.ch/poulet' },
+    'Peperoni': { per: 'stk', kcal: 37, p: 1.5, f: 0.3, c: 6, url: '' },
+    'Griechischer Joghurt': { per: 'g', kcal: 97, p: 9, f: 5, c: 3.6, url: 'coop.ch/joghurt' },
+    'Paprikapulver': { per: 'g', kcal: 282, p: 14, f: 13, c: 54, url: '' },
+    'Spaghetti': { per: 'g', kcal: 357, p: 12, f: 1.5, c: 72, url: 'migros.ch/spaghetti' },
+    'Zitrone': { per: 'stk', kcal: 20, p: 0.7, f: 0.2, c: 3, url: '' },
+    'Vollrahm': { per: 'g', kcal: 345, p: 2.2, f: 36, c: 3, url: 'coop.ch/vollrahm' },
+    'Parmigiano Reggiano': { per: 'g', kcal: 402, p: 33, f: 29, c: 0, url: 'coop.ch/parmigiano' }
+  };
+  UNIT_G = { el: 14, tl: 5, bund: 20, prise: 1 };
+
+  state = {
+    tab: null, view: 'list', q: '', libQ: '',
+    cookInput: '', cookLoading: false, cookResult: null,
+    lonInput: '', calcLoading: false, calcError: false,
+    draft: null, editIdx: null, sugRow: null, removedLib: [],
+    recipes: [
+      { id: 1, title: 'Pizza Napoletana Margherita', servings: 3, photo: true, body: '48 h kalte Gare, Ofen auf Anschlag mit Stahl. Teig nur mit den Fingerspitzen aufziehen, Rand nicht plattdrücken.',
+        ings: [
+          { name: 'Pizzamehl Tipo 00', amount: '500 g', url: 'coop.ch/farina-tipo-00', shot: true },
+          { name: 'Fiordilatte', amount: '250 g', url: 'migros.ch/fiordilatte', shot: true },
+          { name: 'San-Marzano-Tomaten', amount: '300 g', url: 'coop.ch/san-marzano', shot: true },
+          { name: 'Basilikum', amount: '1 Bund', url: '', shot: false },
+          { name: 'Olivenöl', amount: '2 EL', url: 'coop.ch/olivenoel', shot: false }
+        ], nutri: null },
+      { id: 2, title: 'Poulet-Spiessli vom Grill', servings: 2, photo: true, body: 'Über Nacht in Joghurt-Paprika-Marinade. Direkte Hitze, zwei Minuten pro Seite, dann in die indirekte Zone ziehen.',
+        ings: [
+          { name: 'Pouletbrust', amount: '500 g', url: 'migros.ch/poulet', shot: true },
+          { name: 'Peperoni', amount: '2 Stk', url: '', shot: false },
+          { name: 'Griechischer Joghurt', amount: '150 g', url: 'coop.ch/joghurt', shot: true },
+          { name: 'Paprikapulver', amount: '1 TL', url: '', shot: false }
+        ], nutri: null },
+      { id: 3, title: 'Pasta al Limone', servings: 2, photo: false, body: 'Rahm nur warm ziehen lassen, Zitrone erst vom Feuer weg. Pastawasser ist die halbe Sauce.',
+        ings: [
+          { name: 'Spaghetti', amount: '250 g', url: 'migros.ch/spaghetti', shot: true },
+          { name: 'Zitrone', amount: '2 Stk', url: '', shot: false },
+          { name: 'Vollrahm', amount: '150 g', url: 'coop.ch/vollrahm', shot: true },
+          { name: 'Parmigiano Reggiano', amount: '60 g', url: 'coop.ch/parmigiano', shot: true }
+        ], nutri: null }
+    ],
+    longlist: [
+      { id: 1, note: 'Tonkatsu-Sando von diesem Basler Beizli', url: 'https://www.youtube.com/watch?v=aBcD1234', done: false },
+      { id: 2, note: 'Focaccia mit Trauben — Screenshot vom Herbstmarkt', url: 'https://images.example.com/focaccia.jpg', done: false },
+      { id: 3, note: 'Kalbsbries anbraten, endlich mal trauen', url: '', done: true }
+    ]
+  };
+
+  componentDidMount() {
+    if (this.state.recipes.some(r => !r.nutri)) {
+      this.setState(s => ({ recipes: s.recipes.map(r => r.nutri ? r : { ...r, nutri: this.compute(r.ings) }) }));
+    }
+  }
+
+  // ── helpers ──────────────────────────────────────────
+  grams(amount, per) {
+    const n = parseFloat(String(amount).replace(',', '.')) || 0;
+    const a = String(amount).toLowerCase();
+    if (per === 'stk') return n;
+    if (/\bkg\b/.test(a)) return n * 1000;
+    if (/\bg\b/.test(a) || /\bml\b/.test(a) || /\bdl\b/.test(a)) return /\bdl\b/.test(a) ? n * 100 : n;
+    for (const k in this.UNIT_G) if (a.includes(k)) return n * this.UNIT_G[k];
+    return n;
+  }
+  r0(x) { return Math.round(x); }
+  compute(ings) {
+    const per = [], t = { kcal: 0, p: 0, f: 0, c: 0 };
+    let unknown = 0;
+    ings.forEach(ig => {
+      if (!ig.name) return;
+      const e = this.NUTRI[ig.name];
+      if (!e) { unknown++; per.push({ name: ig.name, kcal: null }); return; }
+      const q = this.grams(ig.amount, e.per);
+      const k = e.per === 'stk' ? q : q / 100;
+      const v = { kcal: e.kcal * k, p: e.p * k, f: e.f * k, c: e.c * k };
+      t.kcal += v.kcal; t.p += v.p; t.f += v.f; t.c += v.c;
+      per.push({ name: ig.name, kcal: this.r0(v.kcal), p: this.r0(v.p), f: this.r0(v.f), c: this.r0(v.c) });
+    });
+    return {
+      kcal: this.r0(t.kcal), p: this.r0(t.p), f: this.r0(t.f), c: this.r0(t.c), per,
+      note: unknown
+        ? unknown + ' Zutat(en) ohne Nährwertangabe — Schätzung entsprechend grob. Screenshot der Tabelle nachreichen macht sie genauer.'
+        : 'Schätzung auf Basis der Bibliothekswerte pro 100 g / Stück, hochgerechnet auf deine Mengen. Abweichung realistisch ±10 %.'
+    };
+  }
+  library() {
+    const map = new Map();
+    this.state.recipes.forEach(r => r.ings.forEach(ig => {
+      if (!ig.name || this.state.removedLib.includes(ig.name)) return;
+      if (!map.has(ig.name)) map.set(ig.name, { name: ig.name, url: ig.url, shot: ig.shot, uses: [] });
+      const e = map.get(ig.name);
+      if (ig.url && !e.url) e.url = ig.url;
+      if (ig.shot) e.shot = true;
+      e.uses.push(r.title);
+    }));
+    return [...map.values()].sort((a, b) => a.name.localeCompare(b.name));
+  }
+  nutriLine(name) {
+    const e = this.NUTRI[name];
+    if (!e) return 'Nährwerte offen — Screenshot fehlt';
+    const b = e.per === 'stk' ? '/ Stück' : '/ 100 g';
+    return e.kcal + ' kcal · ' + e.p + ' g E · ' + e.f + ' g F · ' + e.c + ' g KH ' + b;
+  }
+  blankIng() { return { name: '', amount: '', url: '', shot: false }; }
+  patchDraft(fn) { this.setState(s => { const d = { ...s.draft }; fn(d); return { draft: d }; }); }
+  patchIng(i, k, v) {
+    this.setState(s => {
+      const ings = s.draft.ings.map((x, j) => j === i ? { ...x, [k]: v } : x);
+      return { draft: { ...s.draft, ings } };
+    });
+  }
+
+  renderVals() {
+    const st = this.state;
+    const tab = st.tab || ({ 'Rezepte': 'recipes', 'Zutaten': 'ingredients', 'Was koch ich?': 'cook', 'Merkliste': 'longlist' }[this.props.startTab] || 'recipes');
+    const withNutri = this.props.showNutriOnCards !== false;
+    const q = st.q.trim().toLowerCase();
+
+    const cards = st.recipes
+      .filter(r => !q || r.title.toLowerCase().includes(q) || r.ings.some(i => i.name.toLowerCase().includes(q)))
+      .map((r, i) => {
+        const idx = st.recipes.indexOf(r);
+        const n = r.nutri;
+        return {
+          title: r.title,
+          ingLine: r.ings.map(x => x.name).filter(Boolean).join(' · '),
+          kcal: n ? n.kcal + ' kcal' : 'kcal offen',
+          macros: n ? n.p + ' g E · ' + n.f + ' g F · ' + n.c + ' g KH' : 'noch nicht berechnet',
+          photoLabel: r.photo ? 'Foto' : 'Kein Foto',
+          servingsLabel: r.servings + ' Portionen',
+          open: () => this.setState({ view: 'edit', editIdx: idx, draft: JSON.parse(JSON.stringify(r)), calcError: false, sugRow: null })
+        };
+      });
+
+    const lq = st.libQ.trim().toLowerCase();
+    const lib = this.library().filter(x => !lq || x.name.toLowerCase().includes(lq)).map(x => ({
+      name: x.name,
+      nutriLine: this.nutriLine(x.name),
+      source: x.uses.length > 1 ? 'in ' + x.uses.length + ' Rezepten' : 'in „' + x.uses[0] + '"',
+      shotLabel: x.shot ? 'SHOT' : '—',
+      remove: () => this.setState(s => ({ removedLib: [...s.removedLib, x.name] }))
+    }));
+
+    const tabDefs = [['recipes', 'Rezepte'], ['ingredients', 'Zutaten'], ['cook', 'Was koch ich?'], ['longlist', 'Merkliste']];
+    const tabs = tabDefs.map(([k, label]) => ({
+      label, bg: tab === k ? '#F3ECDE' : '#FBF7EE',
+      color: tab === k ? '#C0392B' : '#6B6154',
+      fill: tab === k ? '#C0392B' : 'transparent',
+      go: () => this.setState({ tab: k, view: 'list' })
+    }));
+
+    const longlist = st.longlist.map((l, i) => ({
+      note: l.note, url: l.url, hasUrl: !!l.url,
+      kind: /youtube|vimeo|tiktok|instagram|youtu\.be/i.test(l.url) ? 'Video' : (/\.(jpg|jpeg|png|webp|heic)$/i.test(l.url) ? 'Bild' : (l.url ? 'Link' : 'Notiz')),
+      mark: l.done ? '✓' : '', color: l.done ? '#6B6154' : '#2B2622',
+      deco: l.done ? 'line-through' : 'none',
+      toggle: () => this.setState(s => ({ longlist: s.longlist.map((x, j) => j === i ? { ...x, done: !x.done } : x) })),
+      remove: () => this.setState(s => ({ longlist: s.longlist.filter((x, j) => j !== i) }))
+    }));
+
+    const d = st.draft;
+    const dn = d && d.nutri;
+    const rows = d ? d.ings.map((ig, i) => {
+      const term = (ig.name || '').trim().toLowerCase();
+      const sug = term.length > 0
+        ? this.library().filter(x => x.name.toLowerCase().includes(term) && x.name.toLowerCase() !== term).slice(0, 3)
+          .map(x => ({ name: x.name, nutriLine: this.nutriLine(x.name), pick: () => {
+            this.setState(s => ({
+              draft: { ...s.draft, ings: s.draft.ings.map((y, j) => j === i ? { ...y, name: x.name, url: x.url || y.url, shot: x.shot || y.shot } : y) },
+              sugRow: null
+            }));
+          } }))
+        : [];
+      return {
+        name: ig.name, amount: ig.amount, url: ig.url,
+        showSug: st.sugRow === i && sug.length > 0, sug,
+        shotLabel: ig.shot ? 'Screenshot Nährwerte ✓' : 'Screenshot Nährwerttabelle',
+        shotColor: ig.shot ? '#4E6E52' : '#6B6154',
+        onName: e => { const v = e.target.value; this.setState({ sugRow: i }); this.patchIng(i, 'name', v); },
+        onAmount: e => this.patchIng(i, 'amount', e.target.value),
+        onUrl: e => this.patchIng(i, 'url', e.target.value),
+        onFocus: () => this.setState({ sugRow: i }),
+        shoot: () => this.patchIng(i, 'shot', !ig.shot),
+        remove: () => this.setState(s => ({ draft: { ...s.draft, ings: s.draft.ings.filter((x, j) => j !== i) } }))
+      };
+    }) : [];
+
+    const perServ = dn && d.servings ? Math.round(dn.kcal / d.servings) : null;
+
+    return {
+      isList: st.view === 'list', isEdit: st.view === 'edit',
+      onRecipes: st.view === 'list' && tab === 'recipes',
+      onIngredients: st.view === 'list' && tab === 'ingredients',
+      onCook: st.view === 'list' && tab === 'cook',
+      onList4: st.view === 'list' && tab === 'longlist',
+      tabs, cards, lib, longlist, withNutri,
+      withSearch: this.props.showSearch !== false,
+      noCards: cards.length === 0, noLib: lib.length === 0, noLong: longlist.length === 0,
+      recipeCount: st.recipes.length + (st.recipes.length === 1 ? ' Karte' : ' Karten'),
+      openCount: st.longlist.filter(l => !l.done).length + ' offen',
+      q: st.q, onQ: e => this.setState({ q: e.target.value }),
+      libQ: st.libQ, onLibQ: e => this.setState({ libQ: e.target.value }),
+
+      newRecipe: () => this.setState({ view: 'edit', editIdx: null, calcError: false, sugRow: null,
+        draft: { id: Date.now(), title: '', body: '', servings: 2, photo: false, ings: [this.blankIng()], nutri: null } }),
+
+      cookInput: st.cookInput, onCookInput: e => this.setState({ cookInput: e.target.value }),
+      cookLoading: st.cookLoading,
+      cookBtnLabel: st.cookLoading ? 'Sucht ein Gericht …' : 'Rezept vorschlagen',
+      cookResult: !!st.cookResult && !st.cookLoading,
+      cookTitle: st.cookResult && st.cookResult.title,
+      cookBody: st.cookResult && st.cookResult.body,
+      cookMissing: st.cookResult && st.cookResult.missing,
+      pantryChips: ['Poulet', 'Zucchini', 'Reis', 'Zitrone', 'Joghurt', 'Peperoni'].map(label => ({
+        label, add: () => this.setState(s => ({ cookInput: s.cookInput ? s.cookInput + ', ' + label : label }))
+      })),
+      cookSuggest: () => {
+        if (st.cookLoading) return;
+        const items = st.cookInput.split(/[,\n]/).map(x => x.trim()).filter(Boolean);
+        this.setState({ cookLoading: true, cookResult: null });
+        setTimeout(() => {
+          const base = items.length ? items.slice(0, 3).join(', ') : 'was da ist';
+          this.setState({
+            cookLoading: false,
+            cookResult: {
+              title: items.length ? 'Pfanne mit ' + items[0] + ' und Zitrone' : 'Aglio e olio, weil immer',
+              body: 'Aus ' + base + ' wird ein Gericht in 25 Minuten: Zwiebel in Olivenöl anziehen, ' + (items[0] || 'Gemüse').toLowerCase() + ' scharf anbraten und beiseitestellen. Reis oder Pasta salzig kochen, Sud mit Zitronenabrieb und einem Löffel Joghurt aufschlagen, alles zusammenwerfen, mit Salz und viel schwarzem Pfeffer abschmecken.',
+              missing: 'Fehlt noch für eine ausgewogene Mahlzeit: eine Handvoll Blattsalat und Kichererbsen oder Nüsse für Protein.'
+            }
+          });
+        }, 1500);
+      },
+      adoptCook: () => {
+        const cr = st.cookResult; if (!cr) return;
+        const ings = st.cookInput.split(/[,\n]/).map(x => x.trim()).filter(Boolean).map(n => ({ name: n, amount: '', url: '', shot: false }));
+        this.setState({ view: 'edit', editIdx: null, sugRow: null, calcError: false,
+          draft: { id: Date.now(), title: cr.title, body: cr.body, servings: 2, photo: false, ings: ings.length ? ings : [this.blankIng()], nutri: null } });
+      },
+
+      lonInput: st.lonInput, onLonInput: e => this.setState({ lonInput: e.target.value }),
+      addLong: () => {
+        const v = st.lonInput.trim(); if (!v) return;
+        const isUrl = /^https?:\/\//i.test(v);
+        this.setState(s => ({ lonInput: '', longlist: [{ id: Date.now(), note: isUrl ? 'Link gemerkt' : v, url: isUrl ? v : '', done: false }, ...s.longlist] }));
+      },
+      addLongImage: () => this.setState(s => ({ longlist: [{ id: Date.now(), note: 'Foto aus der Galerie', url: 'https://images.example.com/upload.jpg', done: false }, ...s.longlist] })),
+
+      rows, ingCount: d ? d.ings.length + (d.ings.length === 1 ? ' Zeile' : ' Zeilen') : '',
+      dTitle: d ? d.title : '', dBody: d ? d.body : '', dServings: d ? d.servings : 2,
+      editKicker: st.editIdx === null ? 'Neues Rezept' : 'Rezept bearbeiten',
+      canDelete: st.editIdx !== null,
+      photoState: d && d.photo ? 'Foto vom Gericht ✓' : 'Noch kein Foto',
+      photoAction: d && d.photo ? 'Bild entfernen' : 'Kamera öffnen',
+      shootPhoto: () => this.patchDraft(x => { x.photo = !x.photo; }),
+      onTitle: e => { const v = e.target.value; this.patchDraft(x => { x.title = v; }); },
+      onBody: e => { const v = e.target.value; this.patchDraft(x => { x.body = v; }); },
+      incServ: () => this.patchDraft(x => { x.servings = Math.min(12, x.servings + 1); }),
+      decServ: () => this.patchDraft(x => { x.servings = Math.max(1, x.servings - 1); }),
+      addIng: () => this.setState(s => ({ draft: { ...s.draft, ings: [...s.draft.ings, this.blankIng()] }, sugRow: null })),
+
+      calcLabel: st.calcLoading ? 'Rechnet …' : 'Nährwerte berechnen',
+      calcError: st.calcError,
+      calcNutri: () => {
+        if (st.calcLoading) return;
+        this.setState({ calcLoading: true, calcError: false });
+        setTimeout(() => this.setState(s => ({ calcLoading: false, draft: { ...s.draft, nutri: this.compute(s.draft.ings) } })), 1200);
+      },
+      hasNutri: !!dn && !st.calcLoading,
+      nTotalKcal: dn ? dn.kcal + ' kcal' : '',
+      nTotalMacros: dn ? dn.p + ' g E · ' + dn.f + ' g F · ' + dn.c + ' g KH' : '',
+      nPerServing: perServ ? 'Pro Portion ' + perServ + ' kcal bei ' + d.servings + ' Portionen' : '',
+      nPer: dn ? dn.per.map(p => ({ name: p.name, line: p.kcal === null ? 'keine Werte' : p.kcal + ' kcal · ' + p.p + '/' + p.f + '/' + p.c + ' g' })) : [],
+      nNote: dn ? dn.note : '',
+
+      cancel: () => this.setState({ view: 'list', draft: null, editIdx: null, sugRow: null }),
+      save: () => this.setState(s => {
+        const clean = { ...s.draft, title: s.draft.title.trim() || 'Ohne Titel', ings: s.draft.ings.filter(i => i.name.trim()) };
+        const recipes = s.editIdx === null ? [clean, ...s.recipes] : s.recipes.map((r, i) => i === s.editIdx ? clean : r);
+        return { recipes, view: 'list', tab: 'recipes', draft: null, editIdx: null, sugRow: null };
+      }),
+      remove: () => this.setState(s => ({ recipes: s.recipes.filter((r, i) => i !== s.editIdx), view: 'list', draft: null, editIdx: null }))
+    };
+  }
+}
+
+</script>
+</body>
+</html>
