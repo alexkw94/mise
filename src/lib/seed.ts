@@ -59,7 +59,6 @@ export function seedState(): AppState {
         id: "seed-1",
         title: "Pizza Napoletana Margherita",
         categories: ["Pizza", "Vegetarisch"],
-        servings: 3,
         photoId: null,
         body: "48 h kalte Gare, Ofen auf Anschlag mit Stahl. Teig nur mit den Fingerspitzen aufziehen, Rand nicht plattdrücken.",
         ings: [
@@ -77,7 +76,6 @@ export function seedState(): AppState {
         id: "seed-2",
         title: "Poulet-Spiessli vom Grill",
         categories: ["High-Protein", "Grill"],
-        servings: 2,
         photoId: null,
         body: "Über Nacht in Joghurt-Paprika-Marinade. Direkte Hitze, zwei Minuten pro Seite, dann in die indirekte Zone ziehen.",
         ings: [
@@ -94,7 +92,6 @@ export function seedState(): AppState {
         id: "seed-3",
         title: "Pasta al Limone",
         categories: ["Pasta", "Schnell", "Vegetarisch"],
-        servings: 2,
         photoId: null,
         body: "Rahm nur warm ziehen lassen, Zitrone erst vom Feuer weg. Pastawasser ist die halbe Sauce.",
         ings: [

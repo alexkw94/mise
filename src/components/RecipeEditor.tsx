@@ -5,7 +5,13 @@ import { StoredImage } from "./StoredImage";
 import { TABBAR } from "./Screen";
 import { IngredientPicker } from "./IngredientPicker";
 import { CategoryField } from "./CategoryField";
-import { computeNutrition, macroLine, nutriLine } from "@/lib/nutrition";
+import {
+  UNIT_HINT,
+  computeNutrition,
+  macroLine,
+  nutriLine,
+  type NutriSource,
+} from "@/lib/nutrition";
 import { makeLookup, actions, useStore } from "@/lib/store";
 import { blobToBase64, storeImageFile } from "@/lib/image";
 import { deleteImage, getImage } from "@/lib/idb";
@@ -52,10 +58,14 @@ export function RecipeEditor({
     "idle",
   );
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [missing, setMissing] = useState<string[]>([]);
   const [shareNote, setShareNote] = useState<string | null>(null);
-  const photoRef = useRef<HTMLInputElement>(null);
-  const shotRef = useRef<HTMLInputElement>(null);
-  const shotRowRef = useRef<number>(0);
+  const cameraRef = useRef<HTMLInputElement>(null);
+  const libraryRef = useRef<HTMLInputElement>(null);
+
+  // Same resolution the calculation uses, so the hint under a row and the
+  // final number can never disagree.
+  const lookup = useMemo(() => makeLookup(state), [state]);
 
   const patch = (fn: (d: Recipe) => void) =>
     setDraft((d) => {
@@ -90,17 +100,6 @@ export function RecipeEditor({
     });
   }
 
-  async function onShot(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    const row = shotRowRef.current;
-    e.target.value = "";
-    if (!file) return;
-    const id = await storeImageFile(file, "shot");
-    const old = draft.ings[row]?.shotId;
-    if (old) void deleteImage(old);
-    patchIng(row, "shotId", id);
-  }
-
   /* ------------------------------------------------------------ ingredients */
 
   /** Adds library picks as rows, replacing a trailing empty row if there is one. */
@@ -123,43 +122,38 @@ export function RecipeEditor({
 
   async function calcNutrition() {
     if (calcState === "loading") return;
-    const ings = draft.ings.filter((i) => i.name.trim());
-    if (ings.length === 0) return;
+    const named = draft.ings.filter((i) => i.name.trim());
+    if (named.length === 0) return;
 
-    setCalcState("loading");
+    // 1. Always compute from the built-in table first. It is instant, free and
+    //    works in every build — the result is on screen before any request.
+    const base = makeLookup(state);
+    const local = computeNutrition(draft.ings, base);
+    patch((d) => {
+      d.nutri = local;
+    });
 
-    // Static build (GitHub Pages): there is no server to ask, so compute from
-    // the library alone. Everything the library knows is exact; what it does
-    // not know stays open, and the note says so rather than pretending.
-    if (IS_STATIC) {
-      const nutri = computeNutrition(draft.ings, makeLookup(state));
-      const unknown = nutri.per.filter((x) => x.kcal === null).length;
-      patch((d) => {
-        d.nutri = {
-          ...nutri,
-          note: unknown
-            ? `${nutri.note} Die KI-Schätzung für unbekannte Zutaten gibt es nur in der Server-Version.`
-            : nutri.note,
-        };
-      });
+    const unknown = local.per
+      .filter((row) => row.reason === "unknown")
+      .map((row) => row.name);
+
+    // 2. Nothing the table could not answer, or no server to ask: done.
+    if (unknown.length === 0 || IS_STATIC) {
       setCalcState("idle");
       return;
     }
 
+    // 3. Only the leftovers go to the model, and only where a server exists.
+    setCalcState("loading");
     try {
-      const payload = await Promise.all(
-        ings.map(async (i) => {
-          if (!i.shotId) return { name: i.name, amount: i.amount };
-          const blob = await getImage(i.shotId).catch(() => undefined);
-          if (!blob) return { name: i.name, amount: i.amount };
-          return { name: i.name, amount: i.amount, shot: await blobToBase64(blob) };
-        }),
-      );
-
       const res = await fetch("/api/nutrition", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ingredients: payload }),
+        body: JSON.stringify({
+          ingredients: named
+            .filter((i) => unknown.includes(i.name))
+            .map((i) => ({ name: i.name, amount: i.amount })),
+        }),
       });
       if (!res.ok) throw new Error(String(res.status));
 
@@ -168,12 +162,11 @@ export function RecipeEditor({
         note: string;
       };
 
-      // Persist per-100 g values to the library so every other recipe that
-      // uses the same ingredient gets them too, then compute totals locally
-      // from the user's amounts.
-      const fresh = new Map<string, { basis: Basis; nutriPer100: NutriPer }>();
+      // Per-100 g values go into the library, so every other recipe using the
+      // same ingredient gets them too; totals stay a local computation.
+      const fresh = new Map<string, NutriSource>();
       for (const e of data.ingredients) {
-        const value = {
+        const value: NutriSource = {
           basis: e.basis,
           nutriPer100: {
             kcal: Math.round(e.kcal),
@@ -181,18 +174,23 @@ export function RecipeEditor({
             f: Math.round(e.fat_g * 10) / 10,
             c: Math.round(e.carbs_g * 10) / 10,
           },
+          gramsPerPiece: null,
         };
         fresh.set(e.name, value);
         actions.setLibraryNutrition(e.name, value.basis, value.nutriPer100);
       }
 
-      const base = makeLookup(state);
-      const nutri = computeNutrition(draft.ings, (n) => fresh.get(n) ?? base(n));
+      const merged = computeNutrition(
+        draft.ings,
+        (n) => fresh.get(n) ?? base(n),
+      );
       patch((d) => {
-        d.nutri = { ...nutri, note: data.note || nutri.note };
+        d.nutri = merged;
       });
       setCalcState("idle");
     } catch {
+      // The local numbers stay on screen; only the top-up failed.
+      setMissing(unknown);
       setCalcState("error");
     }
   }
@@ -213,11 +211,6 @@ export function RecipeEditor({
   }
 
   /* ------------------------------------------------------------ derived */
-
-  const perServing =
-    draft.nutri && draft.servings
-      ? Math.round(draft.nutri.kcal / draft.servings)
-      : null;
 
   const suggestionsFor = useMemo(
     () => (i: number) => {
@@ -308,25 +301,56 @@ export function RecipeEditor({
           <span className="relative mlk-chip" style={{ padding: "8px 12px" }}>
             {draft.photoId ? "Foto vom Gericht ✓" : "Noch kein Foto"}
           </span>
-          <button
-            type="button"
-            onClick={() =>
-              draft.photoId ? clearPhoto() : photoRef.current?.click()
-            }
-            className="mlk-btn-primary mlk-t-label relative"
-            style={{
-              padding: "13px 18px",
-              boxShadow: "0 8px 18px -10px rgba(0,0,0,.6)",
-            }}
-          >
-            {draft.photoId ? "Bild entfernen" : "Kamera öffnen"}
-          </button>
+          {draft.photoId ? (
+            <button
+              type="button"
+              onClick={clearPhoto}
+              className="mlk-btn-primary mlk-t-label relative"
+              style={{
+                padding: "13px 18px",
+                boxShadow: "0 8px 18px -10px rgba(0,0,0,.6)",
+              }}
+            >
+              Bild entfernen
+            </button>
+          ) : (
+            <div className="relative flex gap-2">
+              <button
+                type="button"
+                onClick={() => cameraRef.current?.click()}
+                className="mlk-btn-primary mlk-t-label"
+                style={{
+                  padding: "13px 18px",
+                  boxShadow: "0 8px 18px -10px rgba(0,0,0,.6)",
+                }}
+              >
+                Kamera
+              </button>
+              <button
+                type="button"
+                onClick={() => libraryRef.current?.click()}
+                className="mlk-btn-secondary mlk-t-label"
+                style={{ padding: "13px 18px" }}
+              >
+                Mediathek
+              </button>
+            </div>
+          )}
         </div>
+        {/* `capture` jumps straight to the camera; without it the picker opens
+            on existing photos. Two inputs, because one cannot do both. */}
         <input
-          ref={photoRef}
+          ref={cameraRef}
           type="file"
           accept="image/*"
           capture="environment"
+          className="hidden"
+          onChange={onPhoto}
+        />
+        <input
+          ref={libraryRef}
+          type="file"
+          accept="image/*"
           className="hidden"
           onChange={onPhoto}
         />
@@ -350,10 +374,15 @@ export function RecipeEditor({
             {draft.ings.length} {draft.ings.length === 1 ? "Zeile" : "Zeilen"}
           </span>
         </div>
+        {/* The amount parser is not obvious from an empty field, so name the
+            units it understands instead of letting people guess. */}
+        <p className="mlk-t-meta mt-1.5">Mengen: {UNIT_HINT}</p>
 
         <div className="mt-3.5 flex flex-col gap-3">
           {draft.ings.map((row, i) => {
             const sug = sugRow === i ? suggestionsFor(i) : [];
+            const named = row.name.trim().length > 0;
+            const found = named ? lookup(row.name) : null;
             return (
               <div
                 key={i}
@@ -414,39 +443,26 @@ export function RecipeEditor({
                   </div>
                 )}
 
-                <input
-                  value={row.url}
-                  onChange={(e) => patchIng(i, "url", e.target.value)}
-                  placeholder="Produktlink Coop / Migros"
-                  aria-label="Produktlink"
-                  inputMode="url"
-                  className="mlk-input mlk-input-sub mt-[9px]"
-                  style={{ background: "rgba(255,255,255,.8)" }}
-                />
-
-                <div className="mt-[9px] flex items-center gap-[9px]">
+                {/* Immediate feedback: whether this name resolves to numbers
+                    at all. Without it, a wrong name only shows up much later
+                    as a mysterious 0. */}
+                <div className="mt-2 flex items-center justify-between gap-2">
+                  <span className="mlk-t-meta mlk-truncate">
+                    {!named
+                      ? "\u00A0"
+                      : found?.nutriPer100
+                        ? `Erkannt · ${found.nutriPer100.kcal} kcal / ${
+                            found.basis === "stk" ? "Stück" : "100 g"
+                          }${
+                            found.gramsPerPiece
+                              ? ` · 1 Stk ≈ ${found.gramsPerPiece} g`
+                              : ""
+                          }`
+                        : "Nicht in der Nährwerttabelle"}
+                  </span>
                   <button
                     type="button"
-                    className="mlk-btn-dashed h-[42px] flex-1 px-3.5"
-                    style={{
-                      borderRadius: 14,
-                      fontSize: "13.5px",
-                      color: row.shotId
-                        ? "var(--color-accent)"
-                        : "var(--color-subtle)",
-                    }}
-                    onClick={() => {
-                      shotRowRef.current = i;
-                      shotRef.current?.click();
-                    }}
-                  >
-                    {row.shotId
-                      ? "Screenshot Nährwerte ✓"
-                      : "Screenshot Nährwerttabelle"}
-                  </button>
-                  <button
-                    type="button"
-                    className="mlk-icon-btn"
+                    className="mlk-icon-btn -mr-2"
                     aria-label="Zutat entfernen"
                     onClick={() => {
                       if (row.shotId) void deleteImage(row.shotId);
@@ -461,13 +477,6 @@ export function RecipeEditor({
             );
           })}
         </div>
-        <input
-          ref={shotRef}
-          type="file"
-          accept="image/*"
-          className="hidden"
-          onChange={onShot}
-        />
 
         <div className="mt-3.5 flex gap-2.5">
           <button
@@ -491,48 +500,6 @@ export function RecipeEditor({
         </div>
 
         {/* --------------------------------------------------- servings */}
-
-        <div
-          className="mt-7 flex items-center justify-between p-4"
-          style={{
-            borderRadius: 20,
-            background: "rgba(255,255,255,.72)",
-            border: "0.5px solid var(--glass-rim)",
-            boxShadow: "0 1px 1px rgba(0,0,0,.04)",
-          }}
-        >
-          <span className="mlk-t-label">Portionen</span>
-          <div className="flex items-center gap-1">
-            <button
-              type="button"
-              className="mlk-stepper"
-              aria-label="Weniger Portionen"
-              disabled={draft.servings <= 1}
-              onClick={() =>
-                patch((d) => void (d.servings = Math.max(1, d.servings - 1)))
-              }
-            >
-              −
-            </button>
-            <span
-              className="mlk-t-number w-[54px] text-center"
-              aria-live="polite"
-            >
-              {draft.servings}
-            </span>
-            <button
-              type="button"
-              className="mlk-stepper"
-              aria-label="Mehr Portionen"
-              disabled={draft.servings >= 12}
-              onClick={() =>
-                patch((d) => void (d.servings = Math.min(12, d.servings + 1)))
-              }
-            >
-              +
-            </button>
-          </div>
-        </div>
 
         <button
           type="button"
@@ -565,14 +532,6 @@ export function RecipeEditor({
                   {macroLine(draft.nutri)}
                 </span>
               </div>
-              {perServing !== null && (
-                <div
-                  className="mlk-t-sub mt-3"
-                  style={{ color: "var(--color-accent)" }}
-                >
-                  Pro Portion {perServing} kcal bei {draft.servings} Portionen
-                </div>
-              )}
             </div>
 
             {draft.nutri.per.map((p) => (
@@ -586,7 +545,9 @@ export function RecipeEditor({
                   style={{ color: "var(--color-subtle)" }}
                 >
                   {p.kcal === null
-                    ? "keine Werte"
+                    ? p.reason === "amount"
+                      ? "Menge fehlt"
+                      : "keine Werte"
                     : `${p.kcal} kcal · ${p.p}/${p.f}/${p.c} g`}
                 </span>
               </div>
@@ -607,9 +568,10 @@ export function RecipeEditor({
               color: "var(--color-muted)",
             }}
           >
-            Die Nährwert-Schätzung ist grad nicht erreichbar. Kein Drama — das
-            Rezept lässt sich trotzdem speichern, die Werte holst du später
-            nach.
+            {missing.length} Zutat(en) stehen nicht in der Nährwerttabelle
+            {missing.length > 0 ? ` (${missing.join(", ")})` : ""}, und die
+            KI-Schätzung ist grad nicht erreichbar. Alles andere ist
+            berechnet — das Rezept lässt sich normal speichern.
           </div>
         )}
 

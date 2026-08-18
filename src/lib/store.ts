@@ -8,8 +8,9 @@ import type {
   NutriPer,
   Recipe,
 } from "./types";
-import { SEED_LIBRARY, seedState } from "./seed";
-import { computeNutrition } from "./nutrition";
+import { seedState } from "./seed";
+import { lookupFood } from "./foodTable";
+import { computeNutrition, type NutriSource } from "./nutrition";
 
 const KEY = "mlk:state:v1";
 
@@ -91,7 +92,8 @@ export const newId = () =>
 
 /**
  * The library builds itself from whatever the recipes reference, merged by
- * name. Nutrition comes from a manual/AI override first, then the seed table.
+ * name. Nutrition comes from the user's own overrides first, then the
+ * built-in table.
  */
 export function deriveLibrary(s: AppState): LibraryEntry[] {
   const map = new Map<string, LibraryEntry>();
@@ -103,14 +105,14 @@ export function deriveLibrary(s: AppState): LibraryEntry[] {
 
       let entry = map.get(name);
       if (!entry) {
-        const override = s.library[name];
-        const seed = SEED_LIBRARY[name];
+        const source = resolve(s, name);
         entry = {
           name,
           url: "",
           shotId: null,
-          basis: override?.basis ?? seed?.basis ?? "100g",
-          nutriPer100: override?.nutriPer100 ?? seed?.nutriPer100 ?? null,
+          basis: source?.basis ?? "100g",
+          nutriPer100: source?.nutriPer100 ?? null,
+          gramsPerPiece: source?.gramsPerPiece ?? null,
           uses: [],
         };
         map.set(name, entry);
@@ -142,15 +144,40 @@ export function deriveCategories(s: AppState): string[] {
     .map(([name]) => name);
 }
 
-/** Lookup used by the offline nutrition computation. */
+/**
+ * Where an ingredient's numbers come from, in order:
+ *   1. the user's own library — a value they entered or corrected wins always
+ *   2. the built-in table, matched loosely (plural, compound words)
+ *
+ * Returns null only when neither knows the name.
+ */
+function resolve(s: AppState, name: string): NutriSource | null {
+  const override = s.library[name];
+  if (override) {
+    return {
+      basis: override.basis,
+      nutriPer100: override.nutriPer100,
+      // Fill the piece weight from the table if the override lacks one.
+      gramsPerPiece:
+        override.gramsPerPiece ?? lookupFood(name)?.gramsPerPiece ?? null,
+    };
+  }
+
+  const food = lookupFood(name);
+  if (food) {
+    return {
+      basis: "100g",
+      nutriPer100: { kcal: food.kcal, p: food.p, f: food.f, c: food.c },
+      gramsPerPiece: food.gramsPerPiece ?? null,
+    };
+  }
+
+  return null;
+}
+
+/** Lookup used by the nutrition computation. */
 export function makeLookup(s: AppState) {
-  return (name: string): { basis: Basis; nutriPer100: NutriPer | null } | null => {
-    const override = s.library[name];
-    if (override) return override;
-    const seed = SEED_LIBRARY[name];
-    if (seed) return { basis: seed.basis, nutriPer100: seed.nutriPer100 };
-    return null;
-  };
+  return (name: string): NutriSource | null => resolve(s, name);
 }
 
 /* -------------------------------------------------------------------------
@@ -221,10 +248,15 @@ export const actions = {
   },
 
   /** Store AI/manual per-100g values so every recipe using it recomputes. */
-  setLibraryNutrition(name: string, basis: Basis, nutriPer100: NutriPer | null) {
+  setLibraryNutrition(
+    name: string,
+    basis: Basis,
+    nutriPer100: NutriPer | null,
+    gramsPerPiece: number | null = null,
+  ) {
     set((s) => ({
       ...s,
-      library: { ...s.library, [name]: { basis, nutriPer100 } },
+      library: { ...s.library, [name]: { basis, nutriPer100, gramsPerPiece } },
       removedLib: s.removedLib.filter((n) => n !== name),
     }));
   },

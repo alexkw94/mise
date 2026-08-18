@@ -16,56 +16,93 @@ const UNIT_G: Record<string, number> = {
   msp: 0.5,
 };
 
+/** Units the amount field understands, shown to the user as a hint. */
+export const UNIT_HINT = "g · kg · ml · dl · Stk · EL · TL · Bund · Prise";
+
+/** Where an ingredient's numbers come from, once resolved. */
+export interface NutriSource {
+  basis: Basis;
+  nutriPer100: NutriPer | null;
+  /** Weight of one piece, when the ingredient is usually counted. */
+  gramsPerPiece?: number | null;
+}
+
+const num = (raw: string) => parseFloat(raw.replace(",", ".")) || 0;
+
 /**
- * Turn a free-text amount ("500 g", "2 EL", "1,5 kg", "2 Stk") into the
- * quantity the entry's basis expects: grams for "100g", pieces for "stk".
+ * How far to scale the source's values for this amount.
+ *
+ * Returns `null` when the amount cannot be resolved — an empty field, or a
+ * piece count for an ingredient whose piece weight we do not know. Guessing
+ * there would be worse than saying so: it is exactly how a recipe ends up
+ * reporting a confident, wrong number.
  */
-export function quantity(amount: string, basis: Basis): number {
+export function scaleFactor(amount: string, source: NutriSource): number | null {
   const raw = String(amount ?? "").toLowerCase().trim();
-  const n = parseFloat(raw.replace(",", ".")) || 0;
-  if (n === 0) return 0;
-  if (basis === "stk") return n;
+  if (!raw) return null;
+  const n = num(raw);
+  if (n === 0) return null;
 
-  if (/\bkg\b/.test(raw)) return n * 1000;
-  if (/\bdl\b/.test(raw)) return n * 100;
-  if (/\bl\b/.test(raw)) return n * 1000;
-  // ml is treated 1:1 with g — fine for the liquids a home kitchen measures.
-  if (/\bg\b/.test(raw) || /\bml\b/.test(raw)) return n;
+  const counted = /\b(stk|stück|stueck|st)\b/.test(raw);
 
-  for (const unit of Object.keys(UNIT_G)) {
-    if (new RegExp(`\\b${unit}\\b`).test(raw)) return n * UNIT_G[unit];
-  }
-  // Bare number with no unit: assume grams.
-  return n;
+  // Values already per piece: only a count is meaningful.
+  if (source.basis === "stk") return n;
+
+  const grams = (() => {
+    if (/\bkg\b/.test(raw)) return n * 1000;
+    if (/\bdl\b/.test(raw)) return n * 100;
+    if (/\bl\b/.test(raw)) return n * 1000;
+    // ml is treated 1:1 with g — fine for what a home kitchen measures.
+    if (/\bml\b/.test(raw) || /\bg\b/.test(raw)) return n;
+
+    for (const unit of Object.keys(UNIT_G)) {
+      if (new RegExp(`\\b${unit}\\b`).test(raw)) return n * UNIT_G[unit];
+    }
+
+    if (counted) {
+      return source.gramsPerPiece ? n * source.gramsPerPiece : null;
+    }
+    // Bare number, no unit: grams.
+    return n;
+  })();
+
+  return grams === null ? null : grams / 100;
 }
 
 const r0 = (x: number) => Math.round(x);
 
 /**
- * Scale library values (per 100 g / per piece) up to the recipe's amounts.
- * This is the whole point of normalising the library: the same "Olivenöl"
- * entry has to be correct at 2 EL and at 500 g.
+ * Scale per-100 g / per-piece values up to the recipe's amounts.
+ *
+ * This is why the library stores normalised values: the same "Olivenöl" entry
+ * has to be right at 2 EL and at 500 g.
  */
 export function computeNutrition(
   ings: Ingredient[],
-  lookup: (name: string) => { basis: Basis; nutriPer100: NutriPer | null } | null,
+  lookup: (name: string) => NutriSource | null,
 ): RecipeNutri {
   const per: PerIngredientNutri[] = [];
   const total = { kcal: 0, p: 0, f: 0, c: 0 };
-  let unknown = 0;
+  let noValues = 0;
+  let noAmount = 0;
 
   for (const ig of ings) {
     if (!ig.name?.trim()) continue;
     const entry = lookup(ig.name);
 
     if (!entry?.nutriPer100) {
-      unknown++;
-      per.push({ name: ig.name, kcal: null, p: 0, f: 0, c: 0 });
+      noValues++;
+      per.push({ name: ig.name, kcal: null, p: 0, f: 0, c: 0, reason: "unknown" });
       continue;
     }
 
-    const q = quantity(ig.amount, entry.basis);
-    const factor = entry.basis === "stk" ? q : q / 100;
+    const factor = scaleFactor(ig.amount, entry);
+    if (factor === null) {
+      noAmount++;
+      per.push({ name: ig.name, kcal: null, p: 0, f: 0, c: 0, reason: "amount" });
+      continue;
+    }
+
     const v = {
       kcal: entry.nutriPer100.kcal * factor,
       p: entry.nutriPer100.p * factor,
@@ -84,7 +121,25 @@ export function computeNutrition(
       p: r0(v.p),
       f: r0(v.f),
       c: r0(v.c),
+      reason: null,
     });
+  }
+
+  const notes: string[] = [];
+  if (noAmount) {
+    notes.push(
+      `${noAmount} Zutat(en) ohne verwertbare Menge — trag eine Menge ein (${UNIT_HINT}).`,
+    );
+  }
+  if (noValues) {
+    notes.push(
+      `${noValues} Zutat(en) sind nicht in der Nährwerttabelle. Schreib den Namen etwas gängiger, oder lass sie weg.`,
+    );
+  }
+  if (notes.length === 0) {
+    notes.push(
+      "Referenzwerte pro 100 g / Stück, hochgerechnet auf deine Mengen. Abweichung je nach Produkt realistisch ±10 %.",
+    );
   }
 
   return {
@@ -93,14 +148,12 @@ export function computeNutrition(
     f: r0(total.f),
     c: r0(total.c),
     per,
-    note: unknown
-      ? `${unknown} Zutat(en) ohne Nährwertangabe — Schätzung entsprechend grob. Screenshot der Tabelle nachreichen macht sie genauer.`
-      : "Schätzung auf Basis der Bibliothekswerte pro 100 g / Stück, hochgerechnet auf deine Mengen. Abweichung realistisch ±10 %.",
+    note: notes.join(" "),
   };
 }
 
 export function nutriLine(entry: LibraryEntry): string {
-  if (!entry.nutriPer100) return "Nährwerte offen — Screenshot fehlt";
+  if (!entry.nutriPer100) return "Nährwerte offen";
   const { kcal, p, f, c } = entry.nutriPer100;
   const basis = entry.basis === "stk" ? "/ Stück" : "/ 100 g";
   return `${kcal} kcal · ${p} g E · ${f} g F · ${c} g KH ${basis}`;
@@ -108,14 +161,4 @@ export function nutriLine(entry: LibraryEntry): string {
 
 export function macroLine(n: { p: number; f: number; c: number }): string {
   return `${n.p} g E · ${n.f} g F · ${n.c} g KH`;
-}
-
-/** German plural for the one count shown all over the app. */
-export function portions(n: number): string {
-  return `${n} ${n === 1 ? "Portion" : "Portionen"}`;
-}
-
-/** Heuristic: piece-based when the amount reads like a count. */
-export function guessBasis(amount: string): Basis {
-  return /\b(stk|stück|stueck)\b/i.test(amount ?? "") ? "stk" : "100g";
 }

@@ -2,7 +2,6 @@
 
 import { Sheet } from "./Sheet";
 import { Logo } from "./Logo";
-import { portions } from "@/lib/nutrition";
 import type { Recipe, ShareBundle } from "@/lib/types";
 
 /**
@@ -60,7 +59,6 @@ export function ImportSheet({
             <div className="mlk-t-label">{r.title || "Ohne Titel"}</div>
             <div className="mlk-t-meta mt-1">
               {[
-                portions(r.servings),
                 `${r.ings.filter((x) => x.name).length} Zutaten`,
                 r.categories.join(", ") || null,
               ]
@@ -89,7 +87,6 @@ export function bundleToRecipes(
     id: makeId(),
     title: r.title,
     body: r.body,
-    servings: r.servings,
     categories: r.categories ?? [],
     photoId: null,
     ings: (r.ings ?? []).map((i) => ({

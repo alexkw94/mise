@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { Screen, ScreenHeader, ScreenScroll, TABBAR } from "./Screen";
 import { StoredImage } from "./StoredImage";
-import { macroLine, portions } from "@/lib/nutrition";
+import { macroLine } from "@/lib/nutrition";
 import { shareRecipes } from "@/lib/share";
 import { ALL_CATEGORIES, type Recipe } from "@/lib/types";
 
@@ -14,10 +14,9 @@ function RecipeCard({
   recipe: Recipe;
   onOpen: (r: Recipe) => void;
 }) {
-  const ingLine = recipe.ings
-    .map((i) => i.name)
-    .filter(Boolean)
-    .join(" · ");
+  const names = recipe.ings.map((i) => i.name).filter(Boolean);
+  const ingLine = names.join(" · ");
+  const ingCount = names.length;
 
   return (
     <button
@@ -43,7 +42,7 @@ function RecipeCard({
             fontSize: "11.5px",
           }}
         >
-          {portions(recipe.servings)}
+          {ingCount} {ingCount === 1 ? "Zutat" : "Zutaten"}
         </span>
       </div>
 

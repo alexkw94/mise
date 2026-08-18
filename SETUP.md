@@ -31,30 +31,72 @@ and cannot run server code.
 |---|---|---|
 | Runs on | Node (Vercel, a VPS, locally) | github.io, static files only |
 | API routes | live | **removed at build time** |
-| AI nutrition estimate | yes, server-side | **no** — computed from the library |
+| Nutrition | table + model top-up for unknowns | table only |
 | Base path | `/` | `/mise/` |
 
 **Live at https://alexkw94.github.io/mise/**, rebuilt by
 [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml) on every push to
 `main`.
 
-### What the static build gives up, and why
+### Nutrition without a server
+
+The built-in table in [`src/lib/foodTable.ts`](src/lib/foodTable.ts) (≈200
+common ingredients, per 100 g) is the primary source everywhere — not a
+fallback. "Nährwerte berechnen" computes from it first, instantly, in every
+build. Only ingredients the table does not know are sent to the model, and only
+where a server exists.
+
+This came out of checking what is actually reachable from a static site:
+
+| Source | From the browser |
+|---|---|
+| Migros product page | blocked (no CORS) |
+| Coop product page | 403 |
+| Open Food Facts search API | blocked (no CORS) |
+| Open Food Facts main API | blocked, and returning 503 at the time |
+
+So there is **no free way to read nutrition from a product link or an online
+database in the browser** — every one of them needs a server to proxy the
+request. Open Food Facts was also a poor candidate on quality: a search for
+"Griechischer Joghurt" returned three entries at 52, 70 and 114 kcal, one
+claiming 35 g of carbohydrate. Crowdsourced and partly wrong.
+
+Hence the built-in table: free, offline, instant, no key, no rate limit, no
+third-party outage. Values are typical reference figures for the raw
+ingredient, not brand-specific, so a given product can differ by 10–15%. A
+value the user enters or corrects is stored in their own library and wins over
+the table from then on.
+
+**The product-link field was removed** from the ingredient row. It never fed
+the calculation — nothing read it — and it cannot, for the CORS reason above.
+Leaving a field that looks like it does something is worse than not having it.
+Links already stored on seed ingredients still show in the Zutaten tab, where
+they are honestly just bookmarks. `Ingredient.url` remains in the type, so
+nothing was lost and the field can come back.
+
+**The nutrition-table screenshot upload was removed** for the same reason: it
+was input for the model, and the deployed build has no model.
+
+Matching is deliberately forgiving — plural and singular ("Zwiebeln" →
+"Zwiebel"), Swiss and German synonyms ("Rüebli" → "Karotten", "Nudeln" →
+"Pasta"), and the longest whole-word match inside a longer name, so
+"Pouletbrust vom Metzger" still resolves. Entries carry an optional piece
+weight, which is what makes "2 Stk Zwiebel" (220 g) and "500 g Zwiebeln" both
+correct.
+
+When an amount cannot be read, or a name is unknown, the row says which of the
+two it is rather than quietly contributing zero — that ambiguity was the
+original complaint.
+
+### What the static build gives up
 
 `output: export` refuses to build POST route handlers, so the workflow deletes
 `src/app/api` before building. The files stay in the repository — local
 development and any Node deployment still have them.
 
-The one user-visible consequence is "Nährwerte berechnen". On Pages it does
-**not** call Claude; it computes from the ingredient library and says so in the
-note when an ingredient has no values. Everything the library knows is exact,
-so the seed recipes and any ingredient you have already estimated once come out
-right. What is lost is estimating an unknown ingredient and reading a nutrition
-table off a screenshot.
-
-There is no way around this without a server. The API key must never reach the
-browser, so "just call Anthropic from the client" is not an option. To get the
-AI back, deploy the Node build somewhere (Vercel Hobby is free) — the code is
-already there and needs no changes.
+What is lost on Pages is only the model top-up for ingredients missing from the
+table. To get it back, deploy the Node build somewhere (Vercel Hobby is free);
+the code needs no changes.
 
 ### Things that had to become base-path aware
 
@@ -231,14 +273,15 @@ unrecognisability. Tailwind is used for layout, `globals.css` for material.
 CSS regardless of specificity, so unlayered `.mlk-input { width: 100% }` would
 silently override `w-[98px]`. Keep new `.mlk-*` rules inside the layer.
 
-**Nutrition is normalised per 100 g / per piece**, per the brief's note. The AI
-returns per-100 g values, which are written to the library and scaled against
-the user's amounts locally. So the same "Olivenöl" entry stays correct at 2 EL
-and at 500 g, and totals never drift from the amounts on screen.
+**Nutrition is normalised per 100 g / per piece**, per the brief's note.
+Values are scaled against the user's amounts locally, so the same "Olivenöl"
+entry stays correct at 2 EL and at 500 g, and totals never drift from the
+amounts on screen. See "Nutrition without a server" above.
 
-**The local table does the work the AI doesn't need to.** Recipes whose
-ingredients the library already covers are computed on load, free and offline.
-The API call is for what the library doesn't know.
+**Portions were removed.** The stepper set a number that only fed a
+"pro Portion" line, and it was not clear what it was for. `servings` is gone
+from the type; the recipe card now shows the ingredient count where the
+portions chip used to be.
 
 **Images: IndexedDB, not the JSON.** localStorage caps around 5 MB; two phone
 photos would exceed it. Records hold an id, which is the same shape a Supabase

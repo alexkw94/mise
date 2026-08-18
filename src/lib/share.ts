@@ -1,4 +1,4 @@
-import { macroLine, portions } from "./nutrition";
+import { macroLine } from "./nutrition";
 import { BASE_PATH } from "./basePath";
 import type { Recipe, ShareBundle } from "./types";
 
@@ -47,7 +47,6 @@ export function bundleFromRecipes(
     recipes: recipes.map((r) => ({
       title: r.title,
       body: r.body,
-      servings: r.servings,
       categories: r.categories,
       ings: r.ings.map((i) => ({ name: i.name, amount: i.amount, url: i.url })),
     })),
@@ -80,9 +79,10 @@ export function readShareParam(search: string): ShareBundle | null {
 export function recipeToText(recipe: Recipe): string {
   const lines: string[] = [recipe.title];
 
-  const meta = [portions(recipe.servings)];
-  if (recipe.categories.length) meta.push(recipe.categories.join(", "));
-  lines.push(meta.join(" · "), "");
+  if (recipe.categories.length) {
+    lines.push(recipe.categories.join(", "));
+  }
+  lines.push("");
 
   const ings = recipe.ings.filter((i) => i.name.trim());
   if (ings.length) {

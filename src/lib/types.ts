@@ -12,11 +12,16 @@ export interface Macros extends NutriPer {}
 
 export interface PerIngredientNutri {
   name: string;
-  /** null when the ingredient has no library values yet. */
+  /** null when the row could not be computed; `reason` says why. */
   kcal: number | null;
   p: number;
   f: number;
   c: number;
+  /**
+   * "unknown" — no nutrition values for this name.
+   * "amount"  — values exist, but the amount could not be read.
+   */
+  reason?: "unknown" | "amount" | null;
 }
 
 export interface RecipeNutri {
@@ -40,7 +45,6 @@ export interface Recipe {
   id: string;
   title: string;
   body: string;
-  servings: number;
   /** IndexedDB key for the dish photo, or null. */
   photoId: string | null;
   ings: Ingredient[];
@@ -60,7 +64,7 @@ export interface ShareBundle {
   /** Category name when a whole category was shared, else null. */
   label: string | null;
   recipes: Array<
-    Pick<Recipe, "title" | "body" | "servings" | "categories"> & {
+    Pick<Recipe, "title" | "body" | "categories"> & {
       ings: Array<Pick<Ingredient, "name" | "amount" | "url">>;
     }
   >;
@@ -76,6 +80,8 @@ export interface LibraryEntry {
   shotId: string | null;
   basis: Basis;
   nutriPer100: NutriPer | null;
+  /** Weight of one piece, when the ingredient is usually counted. */
+  gramsPerPiece?: number | null;
   /** Titles of the recipes that reference it — derived, not stored. */
   uses: string[];
 }
@@ -105,6 +111,9 @@ export interface AppState {
   recipes: Recipe[];
   longlist: LonglistItem[];
   /** Manual per-100g overrides + names the user removed from the library. */
-  library: Record<string, { basis: Basis; nutriPer100: NutriPer | null }>;
+  library: Record<
+    string,
+    { basis: Basis; nutriPer100: NutriPer | null; gramsPerPiece?: number | null }
+  >;
   removedLib: string[];
 }

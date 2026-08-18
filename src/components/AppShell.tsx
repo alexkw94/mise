@@ -31,7 +31,6 @@ function blankRecipe(): Recipe {
     id: newId(),
     title: "",
     body: "",
-    servings: 2,
     photoId: null,
     ings: [{ name: "", amount: "", url: "", shotId: null }],
     categories: [],
