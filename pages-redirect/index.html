@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>mise ist umgezogen</title>
+<link rel="icon" href="icon-192.png">
+<style>
+  :root { color-scheme: light; }
+  body{margin:0;min-height:100dvh;display:flex;align-items:center;justify-content:center;
+       padding:32px;box-sizing:border-box;
+       background:linear-gradient(180deg,#fbfbfd 0%,#f2f3f5 40%,#e8eaee 100%);
+       font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;
+       color:#1d1d1f;-webkit-font-smoothing:antialiased}
+  .card{max-width:420px;width:100%;padding:28px 26px;border-radius:22px;
+        background:rgba(255,255,255,.72);border:.5px solid rgba(255,255,255,.85);
+        box-shadow:0 1px 1px rgba(0,0,0,.04),0 12px 32px -12px rgba(20,22,28,.28)}
+  .w{font-size:22px;font-weight:500;letter-spacing:.006em}
+  .d{display:inline-block;width:.222em;height:.222em;margin-left:.11em;border-radius:50%;
+     vertical-align:-.111em;background:linear-gradient(180deg,#e4e6e9,#b9bec4 50%,#90969d);
+     box-shadow:0 1px 1.5px -.5px rgba(20,22,28,.45)}
+  h1{font:600 26px/1.15 inherit;letter-spacing:-.026em;margin:14px 0 0}
+  p{font:400 15.5px/1.5 inherit;color:#6e6e73;margin:10px 0 0}
+  a.go{display:inline-flex;align-items:center;height:50px;padding:0 22px;margin-top:20px;
+       border-radius:100px;background:linear-gradient(180deg,#3a3a3c,#1d1d1f);color:#fff;
+       font:500 15.5px/1 inherit;letter-spacing:-.01em;text-decoration:none;
+       box-shadow:0 10px 24px -10px rgba(0,0,0,.6)}
+  small{display:block;margin-top:14px;font:400 12.5px/1.4 inherit;color:#86868b}
+</style>
+</head>
+<body>
+  <div class="card">
+    <span class="w">mise<span class="d"></span></span>
+    <h1>Neue Adresse</h1>
+    <p>mise läuft jetzt unter <strong>mise-olive-six.vercel.app</strong> — dort mit
+       Foto-Upload und Nährwertschätzung. Du wirst gleich weitergeleitet.</p>
+    <a class="go" id="go" href="https://mise-olive-six.vercel.app/">Weiter zu mise</a>
+    <small>Bitte das alte Symbol vom Home-Bildschirm entfernen und die neue Adresse
+           dort ablegen — sonst entstehen zwei getrennte Sammlungen.</small>
+  </div>
+<script>
+  // Query und Hash mitnehmen, damit bereits verschickte Teilen-Links
+  // (…/?r=…) weiterhin im richtigen App-Zustand landen.
+  var target = "https://mise-olive-six.vercel.app/" + location.search + location.hash;
+  document.getElementById("go").href = target;
+  setTimeout(function () { location.replace(target); }, 1200);
+</script>
+</body>
+</html>

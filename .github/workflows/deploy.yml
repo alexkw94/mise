@@ -1,9 +1,20 @@
 name: Deploy to GitHub Pages
 
+# Die App selbst läuft auf Vercel — sie braucht einen Server für den
+# Foto-Upload und die Nährwertschätzung, den GitHub Pages nicht bietet.
+#
+# Diese alte Adresse bleibt trotzdem bestehen und liefert nur noch eine
+# Weiterleitung. Abschalten wäre schlechter: ein vergessenes Symbol auf dem
+# Home-Bildschirm und jeder bereits verschickte Teilen-Link (…/?r=…) liefen
+# sonst ins Leere. Die Weiterleitung nimmt Query und Hash mit, damit solche
+# Links weiterhin funktionieren.
+#
+# Zurückdrehen: diesen Workflow auf den vorherigen Stand bringen
+# (`git log -- .github/workflows/deploy.yml`), dann baut Pages wieder die App.
+
 on:
   push:
     branches: [main]
-  # Lets you re-deploy from the Actions tab without pushing a commit.
   workflow_dispatch:
 
 permissions:
@@ -11,59 +22,27 @@ permissions:
   pages: write
   id-token: write
 
-# Never let two deployments race; finish the running one, then take the newest.
 concurrency:
   group: pages
   cancel-in-progress: false
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-
-      - run: npm ci
-
-      - name: Configure Pages
-        id: pages
-        uses: actions/configure-pages@v5
-
-      - name: Drop server routes
-        # GitHub Pages serves static files only, and `output: export` refuses
-        # to build POST route handlers. They stay in the repository for local
-        # development and for any Node deployment; they just cannot ship here.
-        run: rm -rf src/app/api
-
-      - name: Build static site
-        env:
-          STATIC_EXPORT: "1"
-          # The site lives at https://<user>.github.io/<repo>/ — every
-          # self-built URL needs that prefix.
-          NEXT_PUBLIC_BASE_PATH: ${{ steps.pages.outputs.base_path }}
-          # Tells the app there is no /api to call.
-          NEXT_PUBLIC_STATIC: "1"
-        run: npm run build
-
-      - name: Add .nojekyll
-        # Without this, GitHub's Jekyll step silently drops every path starting
-        # with an underscore — which is all of Next's /_next/ assets.
-        run: touch out/.nojekyll
-
-      - uses: actions/upload-pages-artifact@v3
-        with:
-          path: out
-
   deploy:
-    needs: build
     runs-on: ubuntu-latest
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
+      - uses: actions/checkout@v4
+
+      - name: Weiterleitungsseite vorbereiten
+        run: |
+          cp -R pages-redirect out
+          touch out/.nojekyll
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: out
       - id: deployment
         uses: actions/deploy-pages@v4
