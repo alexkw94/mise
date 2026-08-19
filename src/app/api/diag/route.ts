@@ -8,11 +8,21 @@
  */
 export const runtime = "nodejs";
 
+/** Which deployment answered — tells a stale deploy apart from a bad value. */
+function deployment() {
+  return {
+    commit: process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7) ?? null,
+    deploymentId: process.env.VERCEL_DEPLOYMENT_ID ?? null,
+    env: process.env.VERCEL_ENV ?? null,
+  };
+}
+
 export async function GET() {
-  const raw = process.env.UPLOATHING_TOKEN ?? process.env.UPLOADTHING_TOKEN;
+  const raw = process.env.UPLOADTHING_TOKEN;
 
   if (!raw) {
     return Response.json({
+      deployment: deployment(),
       present: false,
       hint: "UPLOADTHING_TOKEN ist in dieser Umgebung nicht gesetzt.",
       otherUploadthingVars: Object.keys(process.env).filter((k) =>
@@ -35,6 +45,7 @@ export async function GET() {
   }
 
   return Response.json({
+    deployment: deployment(),
     present: true,
     length: raw.length,
     prefix: raw.slice(0, 3),
