@@ -93,6 +93,8 @@ export interface LonglistItem {
   imageId: string | null;
   done: boolean;
   createdAt: number;
+  /** Missing on records written before sync existed; falls back to createdAt. */
+  updatedAt?: number;
 }
 
 export type TabKey = "recipes" | "ingredients" | "cook" | "longlist";
@@ -107,13 +109,30 @@ export interface CookResult {
   ingredients: string[];
 }
 
+/**
+ * Deletions have to survive as tombstones, otherwise the next sync pulls a
+ * recipe deleted on one device straight back from the other. Value is the
+ * timestamp of the deletion, so a later edit can still win over it.
+ */
+export interface Tombstones {
+  recipes: Record<string, number>;
+  longlist: Record<string, number>;
+}
+
 export interface AppState {
   recipes: Recipe[];
   longlist: LonglistItem[];
   /** Manual per-100g overrides + names the user removed from the library. */
   library: Record<
     string,
-    { basis: Basis; nutriPer100: NutriPer | null; gramsPerPiece?: number | null }
+    {
+      basis: Basis;
+      nutriPer100: NutriPer | null;
+      gramsPerPiece?: number | null;
+      /** For last-write-wins when two devices edited the same ingredient. */
+      updatedAt?: number;
+    }
   >;
   removedLib: string[];
+  tombstones: Tombstones;
 }

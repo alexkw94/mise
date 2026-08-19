@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { Sheet } from "./Sheet";
 import { Logo } from "./Logo";
 import { storageStatus } from "./StorageGuard";
+import { SyncSection } from "./SyncSection";
 import { downloadBackup, readBackup, restoreImages } from "@/lib/backup";
 import { actions, useStore } from "@/lib/store";
 
@@ -71,8 +72,8 @@ export function BackupSheet({ onClose }: { onClose: () => void }) {
   return (
     <Sheet
       brand={<Logo size={17} />}
-      title="Sammlung sichern"
-      subtitle="Eine Datei mit allen Rezepten, Zutatenwerten und Bildern."
+      title="Sammlung"
+      subtitle="Abgleich zwischen Geräten und Sicherung als Datei."
       onClose={onClose}
       footer={
         <div className="flex flex-col gap-2">
@@ -102,7 +103,9 @@ export function BackupSheet({ onClose }: { onClose: () => void }) {
         </div>
       }
     >
-      <div className="mlk-card p-4">
+      <SyncSection />
+
+      <div className="mlk-card mt-3 p-4">
         <div className="mlk-kicker">Aktuell gespeichert</div>
         <div className="mlk-t-body mt-2">
           {state.recipes.length}{" "}

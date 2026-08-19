@@ -132,6 +132,58 @@ handled via `BASE_PATH` in [`src/lib/basePath.ts`](src/lib/basePath.ts):
 `out/.nojekyll` is created by the workflow; without it GitHub's Jekyll step
 drops every path beginning with an underscore, which is all of `/_next/`.
 
+## Sync between devices
+
+The collection lives as one JSON file in a **private** GitHub repo
+(`alexkw94/mise-data`), read and written straight from the browser over the
+contents API. Chosen after Supabase fell away: no new account, nothing that
+pauses, and version history for free — every save is a commit, so a recipe
+deleted by accident is recoverable from the repo.
+
+Verified from a foreign browser origin before building on it: the GitHub API
+answers both reads and authenticated writes with CORS headers.
+
+**Setup is per device.** Collection sheet → *Abgleich einrichten*: GitHub
+username, repo name, and a fine-grained token with `Contents: Read and write`
+on that one repo. `testConnection` refuses a token that can only read, and
+refuses a repo that is public — recipes must not end up world-readable by a
+typo.
+
+**The token** is the user's own, stored in localStorage and sent only to
+api.github.com. Worst case it grants write access to that single repo, not to
+the account. That is the price of having no backend, and it is stated plainly
+in the UI.
+
+**When it syncs:** on open, when the app returns to the foreground, and four
+seconds after the last edit. `SyncRunner` guards against loops two ways — a run
+in progress ignores store events (a sync writes to the store itself), and a run
+is skipped when the fingerprint has not moved.
+
+### The merge
+
+`mergeStates` in [`src/lib/merge.ts`](src/lib/merge.ts) is pure and
+**order-independent** — `merge(a, b)` equals `merge(b, a)` — which is what
+makes the 409-conflict retry safe.
+
+| Situation | Outcome |
+|---|---|
+| New on either side | Both kept |
+| Same id, different edits | Newer `updatedAt` wins, per record |
+| Deleted on one device | Tombstone suppresses it |
+| Deleted here, edited there afterwards | The edit wins — the safer mistake |
+| Hand-entered nutrition on both | Newer wins per ingredient |
+
+Deletions must leave tombstones: without them, the next sync pulls a recipe
+deleted on the iPhone straight back from the Mac.
+
+**Images are not synced.** They stay in each device's IndexedDB — the bulk of
+the data and the least critical. The backup file moves them when needed, and a
+missing image simply renders as the silver plate.
+
+Tested end-to-end against the real repo, both directions: a local collection
+pushed up as a commit, and a recipe created remotely pulled down into local
+state.
+
 ## Durability: keeping the collection
 
 Data lives in localStorage (JSON) and IndexedDB (images), which are per origin

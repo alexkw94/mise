@@ -57,6 +57,7 @@ export function hydrate() {
         longlist: parsed.longlist ?? [],
         library: parsed.library ?? {},
         removedLib: parsed.removedLib ?? [],
+        tombstones: parsed.tombstones ?? { recipes: {}, longlist: {} },
       };
       emit();
     }
@@ -70,8 +71,26 @@ function subscribe(fn: () => void) {
   return () => listeners.delete(fn);
 }
 
+/** Subscribe from outside React (the sync runner). */
+export function subscribeStore(fn: () => void): () => void {
+  listeners.add(fn);
+  return () => {
+    listeners.delete(fn);
+  };
+}
+
 const getSnapshot = () => state;
 const getServerSnapshot = () => state;
+
+/** Used by the sync layer after a merge. */
+export function replaceState(next: AppState) {
+  set(() => next);
+}
+
+/** Read the current state outside React. */
+export function getState(): AppState {
+  return state;
+}
 
 export function useStore(): AppState {
   return useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
@@ -235,7 +254,14 @@ export const actions = {
   },
 
   deleteRecipe(id: string) {
-    set((s) => ({ ...s, recipes: s.recipes.filter((r) => r.id !== id) }));
+    set((s) => ({
+      ...s,
+      recipes: s.recipes.filter((r) => r.id !== id),
+      tombstones: {
+        ...s.tombstones,
+        recipes: { ...s.tombstones.recipes, [id]: Date.now() },
+      },
+    }));
   },
 
   /**
@@ -306,7 +332,10 @@ export const actions = {
     set((s) => {
       const next: AppState = {
         ...s,
-        library: { ...s.library, [name]: { basis, nutriPer100, gramsPerPiece } },
+        library: {
+          ...s.library,
+          [name]: { basis, nutriPer100, gramsPerPiece, updatedAt: Date.now() },
+        },
         removedLib: s.removedLib.filter((n) => n !== name),
       };
       // A corrected value has to show up on the cards straight away, so
@@ -332,7 +361,15 @@ export const actions = {
     set((s) => ({
       ...s,
       longlist: [
-        { id: newId(), note, url, imageId, done: false, createdAt: Date.now() },
+        {
+          id: newId(),
+          note,
+          url,
+          imageId,
+          done: false,
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+        },
         ...s.longlist,
       ],
     }));
@@ -342,13 +379,20 @@ export const actions = {
     set((s) => ({
       ...s,
       longlist: s.longlist.map((l) =>
-        l.id === id ? { ...l, done: !l.done } : l,
+        l.id === id ? { ...l, done: !l.done, updatedAt: Date.now() } : l,
       ),
     }));
   },
 
   removeLonglist(id: string) {
-    set((s) => ({ ...s, longlist: s.longlist.filter((l) => l.id !== id) }));
+    set((s) => ({
+      ...s,
+      longlist: s.longlist.filter((l) => l.id !== id),
+      tombstones: {
+        ...s.tombstones,
+        longlist: { ...s.tombstones.longlist, [id]: Date.now() },
+      },
+    }));
   },
 };
 

@@ -8,6 +8,7 @@ import { CookTab } from "./CookTab";
 import { LonglistTab } from "./LonglistTab";
 import { RecipeEditor } from "./RecipeEditor";
 import { ImportSheet, bundleToRecipes } from "./ImportSheet";
+import { SyncRunner } from "./SyncRunner";
 import {
   actions,
   deriveCategories,
@@ -153,6 +154,8 @@ export function AppShell() {
       {tab === "longlist" && <LonglistTab items={state.longlist} />}
 
       <TabBar active={tab} onSelect={setTab} />
+
+      <SyncRunner />
 
       {incoming && (
         <ImportSheet

@@ -112,5 +112,6 @@ export function seedState(): AppState {
     ],
     library: {},
     removedLib: [],
+    tombstones: { recipes: {}, longlist: {} },
   };
 }
