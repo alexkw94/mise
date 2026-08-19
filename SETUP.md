@@ -176,13 +176,28 @@ makes the 409-conflict retry safe.
 Deletions must leave tombstones: without them, the next sync pulls a recipe
 deleted on the iPhone straight back from the Mac.
 
-**Images are not synced.** They stay in each device's IndexedDB — the bulk of
-the data and the least critical. The backup file moves them when needed, and a
-missing image simply renders as the silver plate.
+**Images sync too, but separately.** Each photo is its own file under
+`images/<id>.jpg` in the same repo, transferred only when one side has it and
+the other does not. Keeping them out of the JSON means a 400 KB photo is not
+re-uploaded every time a recipe title changes, and one image that fails to
+transfer costs one photo rather than the whole sync — `syncImages` swallows a
+single failure on purpose. A photo that has not arrived yet renders as the
+silver plate.
+
+Photos live in git history forever, so the repo only grows. At ~300 KB per
+photo that is fine for a personal collection; it would not be for thousands.
 
 Tested end-to-end against the real repo, both directions: a local collection
 pushed up as a commit, and a recipe created remotely pulled down into local
 state.
+
+**Image sync is verified at the protocol level only.** IndexedDB does not work
+in the headless browser used for testing here — `indexedDB.open()` never
+settles — so the full path could not be exercised. What was verified directly
+against the API: a binary upload (`PUT` with base64), the directory listing
+`syncImages` uses to decide what is missing, and a raw download that came back
+byte-identical. The untested half is the pre-existing IndexedDB read/write,
+unchanged by this work. Worth a real-device check on the first photo.
 
 ## Durability: keeping the collection
 

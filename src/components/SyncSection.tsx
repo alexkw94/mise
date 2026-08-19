@@ -72,10 +72,14 @@ export function SyncSection() {
       const res = await syncNow();
       localStorage.setItem(TIME_KEY, String(Date.now()));
       setLast(lastSyncLabel());
+      const bilder =
+        res.images.uploaded || res.images.downloaded
+          ? ` ${res.images.uploaded} Bild(er) hoch, ${res.images.downloaded} runter.`
+          : "";
       setNote(
-        res.pushed
+        (res.pushed
           ? "Abgeglichen und hochgeladen."
-          : "Abgeglichen — es gab nichts Neues zu senden.",
+          : "Abgeglichen — es gab nichts Neues zu senden.") + bilder,
       );
     } catch (err) {
       setError(err instanceof Error ? err.message : "Abgleich fehlgeschlagen.");
@@ -135,8 +139,8 @@ export function SyncSection() {
     <div className="mlk-card p-4">
       <div className="mlk-kicker">Abgleich einrichten</div>
       <p className="mlk-t-sub mt-2" style={{ color: "var(--color-muted)" }}>
-        Die Sammlung liegt in einem privaten GitHub-Repo. Auf jedem Gerät einmal
-        eintragen — danach gleicht die App von selbst ab.
+        Rezepte, Nährwerte und Fotos liegen in einem privaten GitHub-Repo. Auf
+        jedem Gerät einmal eintragen — danach gleicht die App von selbst ab.
       </p>
 
       <div className="mt-3 flex flex-col gap-2">

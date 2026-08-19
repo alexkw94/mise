@@ -1,5 +1,6 @@
 import { fingerprint, mergeStates } from "./merge";
 import { getState, replaceState } from "./store";
+import { getImage, listImageIds, putImage } from "./idb";
 import type { AppState } from "./types";
 
 /**
@@ -10,9 +11,10 @@ import type { AppState } from "./types";
  * pauses, and gives version history for free: every save is a commit, so a
  * recipe deleted by accident is recoverable from the repo.
  *
- * Images are not synced — they stay in each device's IndexedDB. They are the
- * bulk of the data and the least critical; the backup file moves them when
- * needed.
+ * Photos travel too, but separately: the JSON stays small and text-only, and
+ * each image is its own file under `images/`. That way a 400 KB photo is not
+ * re-uploaded every time a recipe title changes, and an image that fails to
+ * transfer costs one photo rather than the whole collection.
  *
  * The token is the user's own fine-grained PAT, scoped to this one repo. It
  * lives in localStorage on their devices and is sent only to api.github.com.
@@ -20,6 +22,7 @@ import type { AppState } from "./types";
 
 const CONFIG_KEY = "mise:sync:v1";
 const API = "https://api.github.com";
+const IMAGE_DIR = "images";
 
 export interface SyncConfig {
   owner: string;
@@ -176,11 +179,125 @@ async function writeRemote(
   return body.content?.sha ?? "";
 }
 
+/* ---------------------------------------------------------------- images */
+
+/** Every image id the collection actually points at. */
+function referencedImages(state: AppState): Set<string> {
+  const ids = new Set<string>();
+  for (const r of state.recipes) {
+    if (r.photoId) ids.add(r.photoId);
+    for (const i of r.ings) if (i.shotId) ids.add(i.shotId);
+  }
+  for (const l of state.longlist) if (l.imageId) ids.add(l.imageId);
+  return ids;
+}
+
+/** Remote image id → blob sha. Missing directory is normal on a fresh repo. */
+async function listRemoteImages(c: SyncConfig): Promise<Set<string>> {
+  const res = await fetch(
+    `${API}/repos/${c.owner}/${c.repo}/contents/${IMAGE_DIR}`,
+    { headers: headers(c.token) },
+  );
+  if (res.status === 404) return new Set();
+  if (!res.ok) throw new SyncError(explain(res.status));
+  const body = (await res.json()) as Array<{ name: string; type: string }>;
+  return new Set(
+    body
+      .filter((e) => e.type === "file")
+      .map((e) => e.name.replace(/\.[^.]+$/, "")),
+  );
+}
+
+async function blobToBase64(blob: Blob): Promise<string> {
+  const buf = new Uint8Array(await blob.arrayBuffer());
+  let binary = "";
+  const CHUNK = 0x8000;
+  for (let i = 0; i < buf.length; i += CHUNK) {
+    binary += String.fromCharCode(...buf.subarray(i, i + CHUNK));
+  }
+  return btoa(binary);
+}
+
+async function uploadImage(c: SyncConfig, id: string): Promise<void> {
+  const blob = await getImage(id);
+  if (!blob) return;
+  const res = await fetch(
+    `${API}/repos/${c.owner}/${c.repo}/contents/${IMAGE_DIR}/${id}.jpg`,
+    {
+      method: "PUT",
+      headers: { ...headers(c.token), "Content-Type": "application/json" },
+      body: JSON.stringify({
+        message: `mise: Bild ${id}`,
+        content: await blobToBase64(blob),
+      }),
+    },
+  );
+  // 422 means it already exists with different content — leave the remote as
+  // the winner rather than overwriting someone else's photo.
+  if (!res.ok && res.status !== 422) throw new SyncError(explain(res.status));
+}
+
+async function downloadImage(c: SyncConfig, id: string): Promise<void> {
+  const res = await fetch(
+    `${API}/repos/${c.owner}/${c.repo}/contents/${IMAGE_DIR}/${id}.jpg`,
+    { headers: { ...headers(c.token), Accept: "application/vnd.github.raw" } },
+  );
+  if (!res.ok) throw new SyncError(explain(res.status));
+  const blob = await res.blob();
+  await putImage(id, blob.type ? blob : new Blob([blob], { type: "image/jpeg" }));
+}
+
+export interface ImageSyncResult {
+  uploaded: number;
+  downloaded: number;
+}
+
+/**
+ * Move photos in both directions. Runs after the JSON, so the remote list of
+ * referenced ids is already the merged one.
+ *
+ * A single failing image is swallowed on purpose: a photo that will not
+ * transfer must not abort the sync of everything else.
+ */
+async function syncImages(
+  c: SyncConfig,
+  state: AppState,
+): Promise<ImageSyncResult> {
+  const wanted = referencedImages(state);
+  if (wanted.size === 0) return { uploaded: 0, downloaded: 0 };
+
+  const [remote, localList] = await Promise.all([
+    listRemoteImages(c),
+    listImageIds().catch(() => [] as string[]),
+  ]);
+  const local = new Set(localList);
+
+  let uploaded = 0;
+  let downloaded = 0;
+
+  for (const id of wanted) {
+    try {
+      if (local.has(id) && !remote.has(id)) {
+        await uploadImage(c, id);
+        uploaded++;
+      } else if (!local.has(id) && remote.has(id)) {
+        await downloadImage(c, id);
+        downloaded++;
+      }
+    } catch {
+      // One photo short is survivable; a failed sync is not.
+    }
+  }
+
+  return { uploaded, downloaded };
+}
+
 /* ---------------------------------------------------------------- public */
 
 export interface SyncResult {
   pulled: number;
   pushed: boolean;
+  images: ImageSyncResult;
 }
 
 /**
@@ -204,12 +321,14 @@ export async function syncNow(): Promise<SyncResult> {
       !remote.state || fingerprint(merged) !== fingerprint(remote.state);
 
     if (!remoteChanged) {
-      return { pulled: merged.recipes.length, pushed: false };
+      const images = await syncImages(config, merged);
+      return { pulled: merged.recipes.length, pushed: false, images };
     }
 
     try {
       await writeRemote(config, merged, remote.sha);
-      return { pulled: merged.recipes.length, pushed: true };
+      const images = await syncImages(config, merged);
+      return { pulled: merged.recipes.length, pushed: true, images };
     } catch (err) {
       const conflict =
         err instanceof SyncError && err.message.includes("Gleichzeitige");
