@@ -28,11 +28,12 @@ function RecipeCard({
       <div className="mlk-plate flex h-[158px] items-end justify-between p-3.5">
         <StoredImage
           id={recipe.photoId}
+          src={recipe.photoUrl}
           alt=""
           className="absolute inset-0 h-full w-full object-cover"
         />
         <span className="relative mlk-chip">
-          {recipe.photoId ? "Foto" : "Kein Foto"}
+          {recipe.photoUrl || recipe.photoId ? "Foto" : "Kein Foto"}
         </span>
         <span
           className="relative mlk-chip"

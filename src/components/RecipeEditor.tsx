@@ -18,6 +18,8 @@ import { blobToBase64, storeImageFile } from "@/lib/image";
 import { deleteImage, getImage } from "@/lib/idb";
 import { shareRecipes, type ShareOutcome } from "@/lib/share";
 import { IS_STATIC } from "@/lib/basePath";
+import { useUploadThing } from "@/lib/uploadthing";
+import { compressImage } from "@/lib/image";
 import type {
   Basis,
   Ingredient,
@@ -61,6 +63,10 @@ export function RecipeEditor({
   const [pickerOpen, setPickerOpen] = useState(false);
   const [missing, setMissing] = useState<string[]>([]);
   const [editingNutri, setEditingNutri] = useState<string | null>(null);
+  const [photoBusy, setPhotoBusy] = useState(false);
+  const [photoNote, setPhotoNote] = useState<string | null>(null);
+
+  const { startUpload } = useUploadThing("recipePhoto");
   const [shareNote, setShareNote] = useState<string | null>(null);
   const cameraRef = useRef<HTMLInputElement>(null);
   const libraryRef = useRef<HTMLInputElement>(null);
@@ -84,21 +90,62 @@ export function RecipeEditor({
 
   /* ---------------------------------------------------------------- photos */
 
+  /**
+   * Compress, then upload. The hosted URL is what makes a photo appear on the
+   * other device, because it travels inside the recipe.
+   *
+   * If the upload fails — offline, no server, quota — the compressed photo is
+   * still kept locally rather than dropped. Better a photo that exists on one
+   * device than a lost one.
+   */
   async function onPhoto(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     e.target.value = "";
     if (!file) return;
-    const id = await storeImageFile(file, "photo");
-    if (draft.photoId) void deleteImage(draft.photoId);
-    patch((d) => {
-      d.photoId = id;
-    });
+
+    setPhotoBusy(true);
+    setPhotoNote(null);
+    const previousId = draft.photoId;
+
+    try {
+      const compressed = await compressImage(file);
+      const named = new File([compressed], "foto.jpg", { type: "image/jpeg" });
+
+      // Local copy first: it shows immediately and survives a failed upload.
+      const id = await storeImageFile(named, "photo");
+      patch((d) => {
+        d.photoId = id;
+        d.photoUrl = null;
+      });
+      if (previousId) void deleteImage(previousId);
+
+      if (IS_STATIC) {
+        setPhotoNote("Bleibt auf diesem Gerät — diese Version hat keinen Upload.");
+        return;
+      }
+
+      const res = await startUpload([named]);
+      const url = res?.[0]?.serverData?.url ?? res?.[0]?.ufsUrl;
+      if (!url) throw new Error("keine URL");
+
+      patch((d) => {
+        d.photoUrl = url;
+      });
+    } catch {
+      setPhotoNote(
+        "Hochladen hat nicht geklappt — das Foto ist gespeichert, aber vorerst nur hier.",
+      );
+    } finally {
+      setPhotoBusy(false);
+    }
   }
 
   function clearPhoto() {
     if (draft.photoId) void deleteImage(draft.photoId);
+    setPhotoNote(null);
     patch((d) => {
       d.photoId = null;
+      d.photoUrl = null;
     });
   }
 
@@ -297,11 +344,18 @@ export function RecipeEditor({
         >
           <StoredImage
             id={draft.photoId}
+            src={draft.photoUrl}
             alt=""
             className="absolute inset-0 h-full w-full object-cover"
           />
           <span className="relative mlk-chip" style={{ padding: "8px 12px" }}>
-            {draft.photoId ? "Foto vom Gericht ✓" : "Noch kein Foto"}
+            {photoBusy
+              ? "Lädt hoch …"
+              : draft.photoUrl
+                ? "Foto · auf allen Geräten"
+                : draft.photoId
+                  ? "Foto · nur hier"
+                  : "Noch kein Foto"}
           </span>
           {draft.photoId ? (
             <button
@@ -356,6 +410,11 @@ export function RecipeEditor({
           className="hidden"
           onChange={onPhoto}
         />
+        {photoNote && (
+          <p className="mlk-t-meta mt-2 px-1" role="status">
+            {photoNote}
+          </p>
+        )}
 
         {/* ------------------------------------------------- categories */}
 

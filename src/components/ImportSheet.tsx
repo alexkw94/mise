@@ -70,8 +70,8 @@ export function ImportSheet({
       </div>
 
       <p className="mlk-t-meta mt-3 px-1">
-        Fotos sind nicht Teil eines geteilten Rezepts — die bleiben auf dem
-        Gerät des Absenders.
+        Fotos kommen mit, sofern sie hochgeladen wurden. Ein Foto, das nur auf
+        dem Gerät des Absenders liegt, lässt sich nicht mitschicken.
       </p>
     </Sheet>
   );
@@ -88,6 +88,7 @@ export function bundleToRecipes(
     title: r.title,
     body: r.body,
     categories: r.categories ?? [],
+    photoUrl: r.photoUrl ?? null,
     photoId: null,
     ings: (r.ings ?? []).map((i) => ({
       name: i.name,

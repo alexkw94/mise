@@ -357,7 +357,12 @@ export const actions = {
     set((s) => ({ ...s, removedLib: [...s.removedLib, name] }));
   },
 
-  addLonglist(note: string, url: string, imageId: string | null = null) {
+  addLonglist(
+    note: string,
+    url: string,
+    imageId: string | null = null,
+    imageUrl: string | null = null,
+  ) {
     set((s) => ({
       ...s,
       longlist: [
@@ -366,6 +371,7 @@ export const actions = {
           note,
           url,
           imageId,
+          imageUrl,
           done: false,
           createdAt: Date.now(),
           updatedAt: Date.now(),

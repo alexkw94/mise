@@ -10,9 +10,9 @@ import type { Recipe, ShareBundle } from "./types";
  * opens the link and gets an import prompt; a friend who doesn't still reads
  * the text. Nothing is uploaded anywhere.
  *
- * Photos are not included — they live in the sender's IndexedDB, and base64
- * images in a URL would be absurd. Recipients get the text and can shoot
- * their own photo.
+ * Photos ride along when they are hosted (a short URL). A photo that only
+ * exists in the sender's IndexedDB still cannot travel this way — base64
+ * images in a URL would be absurd.
  */
 
 /** Links longer than this get dropped; the text is shared on its own. */
@@ -48,6 +48,9 @@ export function bundleFromRecipes(
       title: r.title,
       body: r.body,
       categories: r.categories,
+      // A hosted photo is a short URL, so it can ride along; a local-only
+      // photo still cannot.
+      photoUrl: r.photoUrl ?? null,
       ings: r.ings.map((i) => ({ name: i.name, amount: i.amount, url: i.url })),
     })),
   };

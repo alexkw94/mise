@@ -9,16 +9,23 @@ import { getImage } from "@/lib/idb";
  */
 export function StoredImage({
   id,
+  src,
   alt,
   className,
 }: {
   id: string | null;
+  /** Hosted URL; wins over `id` because it works on every device. */
+  src?: string | null;
   alt: string;
   className?: string;
 }) {
   const [url, setUrl] = useState<string | null>(null);
 
   useEffect(() => {
+    if (src) {
+      setUrl(src);
+      return;
+    }
     if (!id) {
       setUrl(null);
       return;
@@ -39,7 +46,7 @@ export function StoredImage({
       if (objectUrl) URL.revokeObjectURL(objectUrl);
       setUrl(null);
     };
-  }, [id]);
+  }, [id, src]);
 
   if (!url) return null;
   // eslint-disable-next-line @next/next/no-img-element -- blob: URLs cannot go through next/image

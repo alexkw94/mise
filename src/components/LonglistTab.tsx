@@ -3,7 +3,9 @@
 import { useRef, useState } from "react";
 import { Screen, ScreenHeader, ScreenScroll } from "./Screen";
 import { StoredImage } from "./StoredImage";
-import { storeImageFile } from "@/lib/image";
+import { compressImage, storeImageFile } from "@/lib/image";
+import { useUploadThing } from "@/lib/uploadthing";
+import { IS_STATIC } from "@/lib/basePath";
 import { actions } from "@/lib/store";
 import { deleteImage } from "@/lib/idb";
 import type { LonglistItem } from "@/lib/types";
@@ -12,7 +14,7 @@ const VIDEO = /youtube|youtu\.be|vimeo|tiktok|instagram/i;
 const IMAGE = /\.(jpg|jpeg|png|webp|heic|gif|avif)(\?|$)/i;
 
 function kindOf(item: LonglistItem): string {
-  if (item.imageId) return "Bild";
+  if (item.imageId || item.imageUrl) return "Bild";
   if (!item.url) return "Notiz";
   if (VIDEO.test(item.url)) return "Video";
   if (IMAGE.test(item.url)) return "Bild";
@@ -23,6 +25,7 @@ export function LonglistTab({ items }: { items: LonglistItem[] }) {
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  const { startUpload } = useUploadThing("recipePhoto");
   const openCount = items.filter((l) => !l.done).length;
 
   function add() {
@@ -38,9 +41,23 @@ export function LonglistTab({ items }: { items: LonglistItem[] }) {
     e.target.value = "";
     if (!file) return;
     setBusy(true);
+    const note = file.name.replace(/\.[^.]+$/, "");
     try {
-      const id = await storeImageFile(file, "longlist");
-      actions.addLonglist(file.name.replace(/\.[^.]+$/, ""), "", id);
+      const compressed = await compressImage(file);
+      const named = new File([compressed], "bild.jpg", { type: "image/jpeg" });
+      // Local copy first so a failed upload still leaves the image behind.
+      const id = await storeImageFile(named, "longlist");
+
+      let url: string | null = null;
+      if (!IS_STATIC) {
+        try {
+          const res = await startUpload([named]);
+          url = res?.[0]?.serverData?.url ?? res?.[0]?.ufsUrl ?? null;
+        } catch {
+          // Keeps the local copy; the entry is still usable on this device.
+        }
+      }
+      actions.addLonglist(note, "", id, url);
     } finally {
       setBusy(false);
     }
@@ -149,13 +166,14 @@ export function LonglistTab({ items }: { items: LonglistItem[] }) {
                     {item.note}
                   </div>
 
-                  {item.imageId && (
+                  {(item.imageId || item.imageUrl) && (
                     <div
                       className="mlk-plate mt-2.5 h-[120px] w-full"
                       style={{ borderRadius: 14 }}
                     >
                       <StoredImage
                         id={item.imageId}
+                        src={item.imageUrl}
                         alt={item.note}
                         className="absolute inset-0 h-full w-full object-cover"
                       />

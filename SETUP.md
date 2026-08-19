@@ -22,21 +22,50 @@ and neither is visible to the deployed site. Each is its own collection.
 The app runs without a key — everything except the two AI actions works, and
 those render the design's "nicht erreichbar" card.
 
-## Deployment — two build shapes
+## Deployment
 
-The same codebase builds two ways, because GitHub Pages is a static file host
-and cannot run server code.
+**Vercel is the primary host.** The app needs a server for two things — the
+Anthropic nutrition call and the UploadThing signing route — and neither can
+run on a static file host. GitHub Pages was the earlier home and cost both
+features; moving to Vercel gets them back.
 
-| | `npm run build` | GitHub Actions → Pages |
+The static export still builds (`STATIC_EXPORT=1`, workflow in
+`.github/workflows/deploy.yml`) and can stay as a fallback, but it runs without
+API routes: nutrition falls back to the built-in table, and photos stay on the
+device that took them.
+
+| | Vercel (`npm run build`) | GitHub Pages (static export) |
 |---|---|---|
-| Runs on | Node (Vercel, a VPS, locally) | github.io, static files only |
-| API routes | live | **removed at build time** |
-| Nutrition | table + model top-up for unknowns | table only |
+| API routes | live | removed at build time |
+| Nutrition | table + model top-up | table only |
+| Photo upload | UploadThing, visible on every device | local only |
 | Base path | `/` | `/mise/` |
 
-**Live at https://alexkw94.github.io/mise/**, rebuilt by
-[`.github/workflows/deploy.yml`](.github/workflows/deploy.yml) on every push to
-`main`.
+### Environment
+
+| Variable | Where | What |
+|---|---|---|
+| `UPLOADTHING_TOKEN` | server only | Signs uploads. **Never** `NEXT_PUBLIC_`. |
+| `NEXT_PUBLIC_SITE_ORIGIN` | build | The app's own origin; the upload route rejects other origins. |
+| `ANTHROPIC_API_KEY` | server only | Nutrition estimates for ingredients the table lacks. |
+
+### Photos
+
+Uploaded to UploadThing (2 GB free) and referenced by URL on the recipe. That
+URL travels with the recipe through the ordinary text sync, so a photo taken on
+the phone is on the Mac as soon as the collection syncs — no binaries in git,
+no repo that only grows.
+
+The flow is compress → store locally → upload → record the URL. The local copy
+comes first on purpose: if the upload fails, the photo still exists on this
+device and the card says "Foto · nur hier" rather than silently losing it.
+
+Two things worth knowing about the free tier: files are **public** (unguessable
+URLs, but public — private files start at $10/month), and there is no auth on
+the upload route. The middleware only checks the `Origin` header, which stops a
+browser on another site but not someone with curl. Proportionate for a personal
+collection on an obscure URL; if the 2 GB ever fills with things you did not
+upload, the fix is real auth in `core.ts`, not a longer allowlist.
 
 ### Nutrition without a server
 
@@ -176,28 +205,19 @@ makes the 409-conflict retry safe.
 Deletions must leave tombstones: without them, the next sync pulls a recipe
 deleted on the iPhone straight back from the Mac.
 
-**Images sync too, but separately.** Each photo is its own file under
-`images/<id>.jpg` in the same repo, transferred only when one side has it and
-the other does not. Keeping them out of the JSON means a 400 KB photo is not
-re-uploaded every time a recipe title changes, and one image that fails to
-transfer costs one photo rather than the whole sync — `syncImages` swallows a
-single failure on purpose. A photo that has not arrived yet renders as the
-silver plate.
-
-Photos live in git history forever, so the repo only grows. At ~300 KB per
-photo that is fine for a personal collection; it would not be for thousands.
+**Photos are not in the repo.** They go to UploadThing and the recipe carries
+the URL, so they reach the other device as part of the ordinary text sync. An
+earlier version pushed each photo into git as its own file; that worked but
+made the repo grow forever, which is why it was replaced.
 
 Tested end-to-end against the real repo, both directions: a local collection
 pushed up as a commit, and a recipe created remotely pulled down into local
 state.
 
-**Image sync is verified at the protocol level only.** IndexedDB does not work
-in the headless browser used for testing here — `indexedDB.open()` never
-settles — so the full path could not be exercised. What was verified directly
-against the API: a binary upload (`PUT` with base64), the directory listing
-`syncImages` uses to decide what is missing, and a raw download that came back
-byte-identical. The untested half is the pre-existing IndexedDB read/write,
-unchanged by this work. Worth a real-device check on the first photo.
+**Photo upload is not yet verified end to end.** IndexedDB does not settle in
+the headless browser used for testing here, and UploadThing needs a token that
+only exists once the Vercel project does. The build compiles and the route
+mounts; the first real photo is the test.
 
 ## Durability: keeping the collection
 

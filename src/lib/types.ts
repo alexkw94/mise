@@ -45,7 +45,12 @@ export interface Recipe {
   id: string;
   title: string;
   body: string;
-  /** IndexedDB key for the dish photo, or null. */
+  /**
+   * Hosted photo (UploadThing). Preferred when set: it is the only form that
+   * shows up on every device, because the URL travels with the recipe.
+   */
+  photoUrl?: string | null;
+  /** IndexedDB key — the local fallback, and how older recipes stored photos. */
   photoId: string | null;
   ings: Ingredient[];
   /** Free-form labels: "High-Protein", "Breakfast", "Vegan", … */
@@ -65,6 +70,8 @@ export interface ShareBundle {
   label: string | null;
   recipes: Array<
     Pick<Recipe, "title" | "body" | "categories"> & {
+      /** Shared recipes carry the photo, now that it is just a URL. */
+      photoUrl?: string | null;
       ings: Array<Pick<Ingredient, "name" | "amount" | "url">>;
     }
   >;
@@ -90,6 +97,8 @@ export interface LonglistItem {
   id: string;
   note: string;
   url: string;
+  /** Hosted image (UploadThing); preferred over the local `imageId`. */
+  imageUrl?: string | null;
   imageId: string | null;
   done: boolean;
   createdAt: number;
