@@ -6,6 +6,7 @@ import { StoredImage } from "./StoredImage";
 import { macroLine } from "@/lib/nutrition";
 import { shareRecipes } from "@/lib/share";
 import { BackupSheet } from "./BackupSheet";
+import { SyncDot, useSyncStatus } from "./SyncBadge";
 import { ALL_CATEGORIES, type Recipe } from "@/lib/types";
 
 function RecipeCard({
@@ -99,6 +100,12 @@ export function RecipesTab({
 }) {
   const [shareNote, setShareNote] = useState<string | null>(null);
   const [backupOpen, setBackupOpen] = useState(false);
+  const sync = useSyncStatus();
+  const [promptHidden, setPromptHidden] = useState(
+    () =>
+      typeof localStorage !== "undefined" &&
+      localStorage.getItem("mise:sync:prompt-dismissed") === "1",
+  );
 
   const inCategory = useMemo(
     () =>
@@ -144,10 +151,11 @@ export function RecipesTab({
           <button
             type="button"
             onClick={() => setBackupOpen(true)}
-            className="mlk-icon-btn -mr-2"
-            aria-label="Sammlung sichern"
-            title="Sammlung sichern"
+            className="mlk-icon-btn relative -mr-2"
+            aria-label="Sammlung und Abgleich"
+            title="Sammlung und Abgleich"
           >
+            <SyncDot />
             <svg width="19" height="19" viewBox="0 0 20 20" fill="none"
                  stroke="currentColor" strokeWidth="1.6"
                  strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -193,6 +201,50 @@ export function RecipesTab({
       </ScreenHeader>
 
       <ScreenScroll>
+        {sync.state === "off" && !promptHidden && (
+          <div className="mlk-card-flat mb-[18px] p-4">
+            <div className="mlk-kicker">Nur auf diesem Gerät</div>
+            <p className="mlk-t-sub mt-2" style={{ color: "var(--color-muted)" }}>
+              Der Abgleich ist hier noch nicht eingerichtet. Rezepte und Fotos
+              bleiben vorerst auf diesem Gerät.
+            </p>
+            <div className="mt-3 flex gap-2">
+              <button
+                type="button"
+                onClick={() => setBackupOpen(true)}
+                className="mlk-btn-primary mlk-t-label h-11 flex-1"
+              >
+                Jetzt einrichten
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  localStorage.setItem("mise:sync:prompt-dismissed", "1");
+                  setPromptHidden(true);
+                }}
+                className="mlk-btn-secondary mlk-t-label h-11 px-4"
+              >
+                Später
+              </button>
+            </div>
+          </div>
+        )}
+
+        {sync.state === "error" && (
+          <div
+            className="mlk-t-sub mb-[18px] p-4"
+            role="alert"
+            style={{
+              borderRadius: 18,
+              border: "0.5px solid rgba(0,0,0,.1)",
+              background: "rgba(255,255,255,.8)",
+              color: "var(--color-muted)",
+            }}
+          >
+            Abgleich fehlgeschlagen: {sync.error}
+          </div>
+        )}
+
         {category !== ALL_CATEGORIES && inCategory.length > 0 && (
           <div className="mb-[18px] flex items-center justify-between gap-3">
             <span className="mlk-t-meta">

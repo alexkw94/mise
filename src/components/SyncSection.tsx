@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { syncLabel, useSyncStatus } from "./SyncBadge";
 import {
   DEFAULT_CONFIG,
   getConfig,
@@ -30,6 +31,7 @@ export function SyncSection() {
   const [note, setNote] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [last, setLast] = useState("");
+  const status = useSyncStatus();
 
   useEffect(() => {
     const c = getConfig();
@@ -98,6 +100,19 @@ export function SyncSection() {
           {config.owner}/{config.repo}
         </div>
         <div className="mlk-t-meta mt-1">Zuletzt: {last}</div>
+        <div
+          className="mlk-t-sub mt-1"
+          style={{
+            color:
+              status.state === "error"
+                ? "var(--color-danger)"
+                : status.state === "syncing"
+                  ? "var(--color-accent)"
+                  : "var(--color-subtle)",
+          }}
+        >
+          {syncLabel(status)}
+        </div>
 
         <div className="mt-3 flex gap-2">
           <button

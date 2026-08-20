@@ -188,6 +188,27 @@ seconds after the last edit. `SyncRunner` guards against loops two ways — a ru
 in progress ignores store events (a sync writes to the store itself), and a run
 is skipped when the fingerprint has not moved.
 
+### Making sync visible
+
+Sync runs in the background, which is exactly why it needs to report itself.
+Two defects shipped together and hid each other:
+
+1. `SyncRunner` checked the config **once on mount** and gave up when it was
+   absent — which it always is, because sync gets configured after the app has
+   loaded. Automatic sync therefore never started until a full reload, and a
+   home-screen app can go days without one. It now subscribes to configuration
+   changes (only to *changes*: reacting to every status change would turn a
+   persistent failure into a retry loop, since failing sets the status).
+2. Nothing in the UI said whether sync was set up, running, or failing, and
+   `SyncRunner` swallowed its errors. "Not configured" looked exactly like
+   "working" — the worse of the two bugs, because nobody investigates something
+   that looks fine.
+
+Now: an observable status in `sync.ts`, a dot on the collection button
+(`SyncBadge`) that appears only when something needs attention, a dismissible
+prompt on the recipe list while sync is unconfigured on that device, and the
+error text shown rather than discarded.
+
 ### The merge
 
 `mergeStates` in [`src/lib/merge.ts`](src/lib/merge.ts) is pure and

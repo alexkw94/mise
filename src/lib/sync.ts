@@ -50,6 +50,65 @@ export function setConfig(config: SyncConfig | null) {
   if (typeof localStorage === "undefined") return;
   if (config) localStorage.setItem(CONFIG_KEY, JSON.stringify(config));
   else localStorage.removeItem(CONFIG_KEY);
+  // Tell the runner and the UI, so setting sync up starts it immediately
+  // instead of only after the next full page load.
+  setStatus(config ? { state: "idle" } : { state: "off" });
+  emitStatus();
+}
+
+/* ---------------------------------------------------------------- status */
+
+export type SyncState = "off" | "idle" | "syncing" | "ok" | "error";
+
+export interface SyncStatus {
+  state: SyncState;
+  error?: string | null;
+  at?: number | null;
+}
+
+/**
+ * Observable status.
+ *
+ * Sync runs in the background, so without this the UI cannot tell "not set
+ * up" from "working" from "failing every time" — they all look identical.
+ * That ambiguity is worse than an outright failure, because nobody
+ * investigates something that looks fine.
+ */
+let status: SyncStatus = { state: "off", error: null, at: null };
+const statusListeners = new Set<() => void>();
+
+function emitStatus() {
+  for (const fn of statusListeners) fn();
+}
+
+export function setStatus(next: Partial<SyncStatus>) {
+  status = { ...status, ...next };
+  emitStatus();
+}
+
+export function getSyncStatus(): SyncStatus {
+  return status;
+}
+
+export function subscribeSyncStatus(fn: () => void): () => void {
+  statusListeners.add(fn);
+  return () => {
+    statusListeners.delete(fn);
+  };
+}
+
+/** Called once on boot so the first paint already knows the truth. */
+export function initSyncStatus() {
+  status = getConfig()
+    ? { state: "idle", error: null, at: lastSyncAt() }
+    : { state: "off", error: null, at: null };
+  emitStatus();
+}
+
+export function lastSyncAt(): number | null {
+  if (typeof localStorage === "undefined") return null;
+  const raw = localStorage.getItem("mise:sync:last");
+  return raw ? Number(raw) : null;
 }
 
 /* ------------------------------------------------------------ base64 utf-8 */
